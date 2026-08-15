@@ -1,0 +1,78 @@
+```text
+# =========================
+# LangChain / LangGraph
+# =========================
+langchain
+langchain-core
+langchain-community
+langchain-ollama
+langgraph
+langgraph-checkpoint
+langgraph-checkpoint-sqlite
+
+# =========================
+# Ollama
+# =========================
+ollama
+
+# =========================
+# Vector Database
+# =========================
+chromadb
+
+# =========================
+# Document Processing
+# =========================
+pypdf
+python-docx
+beautifulsoup4
+lxml
+unstructured
+
+# =========================
+# Environment / Configuration
+# =========================
+python-dotenv
+
+# =========================
+# Web / Tools
+# =========================
+requests
+duckduckgo-search
+wikipedia
+tavily-python
+
+# =========================
+# Backend API
+# =========================
+fastapi
+uvicorn
+
+# =========================
+# Voice - Speech to Text
+# =========================
+faster-whisper
+sounddevice
+numpy
+
+# =========================
+# Text to Speech
+# =========================
+edge-tts
+
+# =========================
+# Utilities
+# =========================
+rich
+loguru
+tqdm
+tiktoken
+
+# =========================
+# Development
+# =========================
+pytest
+ruff
+black
+isort
+```
