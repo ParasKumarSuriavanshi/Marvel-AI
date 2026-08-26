@@ -209,4 +209,4 @@ def handle_vector(memor: MemoryOperation, memory_id):
         retrive_vector(query=query)
     else:
         retrive_vector(query=query)
-    1
+    

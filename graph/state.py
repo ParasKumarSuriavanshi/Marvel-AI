@@ -40,7 +40,7 @@ class MemoryData(TypedDict, total=False):
     subject: str
     predicate: str
     object: Any
-    source: str
+    content: str
 
     # EPISODIC
     event: str
