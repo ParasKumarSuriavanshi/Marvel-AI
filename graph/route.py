@@ -17,12 +17,16 @@ def memory_router(state: MemoryManagerOutput) -> Literal[
     memory_required = state.get("memory_required", False)
     if memory_required:
         memory_type = state.get("memory_type")
+        action = state.get("action")
         if memory_type == "profile":
             return "profile"
         elif memory_type == "semantic":
             return "semantic"
         elif memory_type == "episodic":
-            return "episodic"
+            if action in ["update", "delete", "retrieve"]:
+                return "episodic_vt"
+            else:
+                return "episodic"
         elif memory_type == "short_term":
             return "short_term"
     else:

@@ -5,7 +5,7 @@ import sqlite3
 
 from graph.state import MarvelState
 BASE_DIR = Path(__file__).resolve().parent.parent
-DB_PATH = BASE_DIR / "database" / "profile.db"
+DB_PATH = BASE_DIR / "database" / "sql" / "profile.db"
 
 
 def get_connection():
@@ -24,7 +24,6 @@ def init_db():
             category TEXT NOT NULL,
             field TEXT NOT NULL,
             value TEXT NOT NULL,
-            value_type TEXT DEFAULT 'string',
             confidence REAL DEFAULT 1.0,
             importance REAL DEFAULT 0.5,
             source TEXT,
@@ -102,7 +101,6 @@ def get_profile(
                 category,
                 field,
                 value,
-                value_type,
                 confidence,
                 importance,
                 source
@@ -123,7 +121,6 @@ def get_profile(
                 category,
                 field,
                 value,
-                value_type,
                 confidence,
                 importance,
                 source
@@ -142,7 +139,6 @@ def get_profile(
                 category,
                 field,
                 value,
-                value_type,
                 confidence,
                 importance,
                 source
@@ -152,36 +148,35 @@ def get_profile(
             user_id,
         ))
 
-    rows = cursor.fetchall()
+    memories = [dict(row) for row in cursor.fetchall()]
 
     conn.close()
 
-    return rows
+    return memories
 
 
 
 
 
-def handle_profile_memory(state: MarvelState, memory: dict):
-    user_id = state["user_id"]
+def handle_profile_memory(state):
+    """Handles all the CRUD operation for the profile memory."""
+
+
+    for operation in state.get("memories", []):
+        if operation.get("memory_type") != "semantic":
+            continue
+
+        action = operation.get("action")
+        user_id = operation.get("user_id")
+        data = operation.get(data,{})
+        category = data.get('category', '')
+        field = data.get('field', '')
+        value = data.get('value', '')
+        importance = data.get('importance', '')
+        confidence = operation.get("confidence")
+        source = operation.get("source")
+
     
-    action = memory["action"]
-
-    confidence = memory.get("confidence", 1.0)
-
-    importance = memory.get("importance", 0.5)
-
-    source = memory.get("source", "unknown")
-
-    data = memory["data"]
-
-    category = data["category"]
-
-    field = data["field"]
-
-    value = data.get("value")
-
-
 
     if action in ("create", "update"):
 
@@ -195,12 +190,7 @@ def handle_profile_memory(state: MarvelState, memory: dict):
             source=source
         )
 
-        return {
-            "status": "success",
-            "action": action,
-            "category": category,
-            "field": field
-        }
+        print("profile created success")
 
 
 
@@ -212,17 +202,13 @@ def handle_profile_memory(state: MarvelState, memory: dict):
             field=field
         )
 
-        return {
-            "status": "success" if deleted else "not_found",
-            "action": "delete",
-            "category": category,
-            "field": field
-        }
+        print("profile deleted success")
     else:
         return {
             "status": "error",
             "message": f"Unsupported profile action: {action}"
         }
+
     
 
 

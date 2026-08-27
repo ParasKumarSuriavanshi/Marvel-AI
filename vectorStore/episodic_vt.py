@@ -7,6 +7,21 @@ from langchain_ollama.embeddings import OllamaEmbeddings
 from graph.state import MemoryManagerOutput , MemoryOperation
 
 
+#------------------------
+#   sql
+#------------------------
+import sqlite3
+BASE_DIRT = Path(__file__).resolve().parent.parent
+DB_PATHH = BASE_DIRT / "database" / "episodic.db"
+
+def get_connection():
+    return sqlite3.connect(DB_PATHH)
+
+#------------------------
+#   sql
+#------------------------
+
+
 DIMENSION = 768
 
 BASE_DIR = Path(__file__).resolve().parents[1]
@@ -33,22 +48,19 @@ else:
 
 
 
-def create_vector(
-    memor: MemoryOperation,
-    memory_id: int
-):
+def create_vector(text):
     """Create and add an episodic memory vector."""
 
-    data = memor["data"]
-        
-        # Convert memory data into text
-    text = (
-        f"Event: {data.get('event', '')}. "
-        f"Context: {data.get('context', '')}. "
-        f"Summary: {data.get('summary', '')}. "
-        f"Date: {data.get('date', '')}.")
-        
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""SELECT MAX(memory_id) FROM episodic_memories;""")
+    results = cursor.fetchone()
+    previous_memory_id = results[0] if results[0] is not None else 0
+    memory_id = previous_memory_id + 1
 
+
+
+    
         # Generate embedding
     vector = embedding.embed_query(text)
 
@@ -66,6 +78,7 @@ def create_vector(
 
     # Save index
     faiss.write_index(index,str(INDEX_PATH))
+    return memory_id
 
 
 
@@ -74,20 +87,11 @@ def create_vector(
 
 
 
-
-def update_vector(memor: MemoryOperation ,memory_id: int):
+def update_vector(text ,memory_id: int):
     """Update an existing episodic memory vector."""
 
 
-    data = memor["data"]
-
-        # Convert memory data into text
-    text = (
-        f"Event: {data.get('event', '')}. "
-        f"Context: {data.get('context', '')}. "
-        f"Summary: {data.get('summary', '')}. "
-        f"Date: {data.get('date', '')}.")
-
+    
         # Generate new embedding
     new_vector = embedding.embed_query(text)
 
@@ -165,7 +169,7 @@ def search_vector(query):
     query_embedding = embedding.embed_query(query)
     query_vector = np.array([query_embedding],dtype=np.float32)
 
-    distances, ids = index.search(query_vector,k=1)
+    distances, ids = index.search(query_vector,k=5)
 
     results = []
     
@@ -182,31 +186,38 @@ def search_vector(query):
 
 
 
-def handle_vector(memor: MemoryOperation, memory_id):
+def handle_vector(state):
     """Here we decide which function to call according to the need."""
 
+    memory = []
     query = ""
-    action = memor['action']
-    data = memor["data"]
+    for operation in state.get("memories", []):
+        if operation.get("memory_type") != "episodic":
+            continue
+            
+        action = operation.get("action")
+        data = operation.get("data", {})
 
-    query = (
-        f"{data.get('event', '')} "
-        f"{data.get('context', '')} "
-        f"{data.get('summary', '')}"
-    )
+        query = (
+            f"Event: {data.get('event', '')}. "
+            f"Context: {data.get('context', '')}. "
+            f"Summary: {data.get('summary', '')}. "
+            f"Date: {data.get('date', '')}.")
 
-    if action == "create":
-        create_vector(memor=memor,memory_id=memory_id)
-    elif action == "update":
-        id = search_vector(query=query)
-        update_vector(memor=memor,memory_id=memory_id)
-        return id
-    elif action == " delete":
-        id = search_vector(query=query)
-        delete_vector(memory_id=memory_id)
-        return id
-    elif action == "retrieve":
-        retrive_vector(query=query)
-    else:
-        retrive_vector(query=query)
-    
+        if action == "create":
+            operation["memory_id"]=[create_vector(query)]
+        elif action == "update":
+            id = search_vector(query=query)
+            update_vector(text=query, memory_id=id[0])
+            operation["memory_id"]=[id]
+        elif action == " delete":
+            id = search_vector(query=query)
+            delete_vector(memory_id=id[0])
+            operation["memory_id"]=[id]
+        elif action == "retrieve":
+            retrive_vector(query=query)
+        else:
+            print("error is in the action ot valid")
+
+    return {"memories":state.get("memories", [])}
+        

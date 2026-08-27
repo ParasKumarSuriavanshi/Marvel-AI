@@ -1,11 +1,16 @@
-from memory.profile import handle_profile_memory
-from graph.route import memory_router
-from langgraph.graph import END, StateGraph
 from graph import state
+from graph.state import MemoryManagerOutput
 from memory.checkpoint import memory
-from graph.state import MarvelState
+
 from memory.manager import manager
-from model.llm import llm
+from memory.profile import handle_profile_memory
+from memory.semantic_json import handle_json
+from vectorStore.semantic import handle_semantic
+from memory.episodic import handle_episodic_memory
+from vectorStore.episodic_vt import handle_vector
+from graph.route import memory_router
+
+from langgraph.graph import END, StateGraph
 from langchain_core.messages import AIMessage, HumanMessage
 
 
@@ -23,14 +28,14 @@ from langchain_core.messages import AIMessage, HumanMessage
 def build():
     """create workflow graph for the Marvel AI system"""
 
-    builder = StateGraph(MarvelState)
+    builder = StateGraph(MemoryManagerOutput)
 
-    #builder.add_node("answer" , answer)
     builder.add_node("manager", manager)
     builder.add_node("profile", handle_profile_memory)
-    # builder.add_node("semantic", semantic)
-    # builder.add_node("episodic", episodic)
-    # builder.add_node("short_term", short_term)
+    builder.add_node("semantic", handle_semantic)
+    builder.add_node("semantic_json", handle_json)
+    builder.add_node("episodic", handle_episodic_memory)
+    builder.add_node("episodic_vt", handle_vector)
 
     builder.add_conditional_edges(
     "manager",memory_router,
@@ -38,13 +43,19 @@ def build():
         "profile": "profile",
         "semantic": "semantic",
         "episodic": "episodic",
+        "episodic_vt": "episodic_vt",
         "short_term": "short_term",
         "end": END,
     }
     )
-
+    builder.add_edge("profile", END)
+    builder.add_edge("episodic_vt", "episodic")
+    builder.add_edge("episodic", END)
+    builder.add_edge("semantic", "semantic_json")
+    builder.add_edge("semantic_json", END)
+    
     builder.set_entry_point("manager")
-    builder.add_edge("profile" , END)
+    
 
     #builder.set_entry_point("answer")
 

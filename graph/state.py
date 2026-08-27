@@ -1,6 +1,6 @@
 from dataclasses import Field
 from typing import Annotated, Optional, Any
-from typing_extensions import TypedDict
+from typing_extensions import TypedDict , NotRequired
 from langgraph.graph.message import Literal, add_messages
 from langchain_core.messages import AnyMessage
 
@@ -81,6 +81,8 @@ class MemoryOperation(TypedDict):
 
     data: MemoryData
     reason: str
+    memory_id:NotRequired[list[int]]
+    user_id: str
 
 
 class MemoryManagerOutput(TypedDict):

@@ -3,7 +3,7 @@ from pathlib import Path
 from langchain_ollama import OllamaEmbeddings
 import numpy as np
 
-from graph.state import MemoryData , MemoryOperation
+from graph.state import MemoryManagerOutput
 
 
 DIMENSION = 768
@@ -68,6 +68,7 @@ def create_add(data: str , ):
     
     # Save index
     faiss.write_index(index,str(INDEX_PATH))
+    return memory_id
 
 
 
@@ -114,10 +115,11 @@ def search(data: str):
         if memory_id == -1:
             continue
 
-        results.append({
-            "memory_id": int(memory_id),
-            "distance": float(distance)
-        })
+        # results.append({
+        #     "memory_id": int(memory_id),
+        #     "distance": float(distance)
+        # })
+        results.append(int(memory_id))
 
 
     return results
@@ -140,20 +142,27 @@ def delete(memory_id: int):
 
 
 
-def handle_semantic(memory: MemoryData , ope: MemoryOperation):
+def handle_semantic(state):
     """This function decide which CRUD operation to be carried out based on the input taken from the state."""
+    
+    for operation in state.get("memories", []):
+        if operation.get("memory_type") != "semantic":
+            continue
+            
+        action = operation.get("action")
+        data = operation.get("data", {})
 
+        if action == "create":
+            operation["memory_id"] = [create_add(data)]
+        elif action == "update":
+            id = search(data)
+            update(data , id[0]["memory_id"])
+            operation["memory_id"] = [id]
+        elif action == "retrieve":
+            search(data)
+        elif action == "delete":
+            id = search(data)
+            delete(data , id[0]["memory_id"])
+            operation["memory_id"] = [id]
 
-    data = memory["content"]
-    action = ope["action"]
-
-    if action == "create":
-        create_add(data)
-    elif action == "update":
-        id = search(data)
-        update(data , id["memory_id"])
-    elif action == "retrieve":
-        search(data)
-    elif action == "delete":
-        id = search(data)
-        update(data , id["memory_id"])
+    return {"memories":state.get("memories",[])}
