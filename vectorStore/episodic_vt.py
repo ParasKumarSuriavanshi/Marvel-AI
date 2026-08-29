@@ -90,7 +90,9 @@ def create_vector(text):
 def update_vector(text ,memory_id: int):
     """Update an existing episodic memory vector."""
 
-
+    if memory_id == None:
+        print("No memory id provided to the update episodic memeory")
+        return
     
         # Generate new embedding
     new_vector = embedding.embed_query(text)
@@ -116,6 +118,12 @@ def update_vector(text ,memory_id: int):
 
 
 def delete_vector(memory_id: int):
+
+
+    if memory_id == None:
+        print("No memory id provided to the delete episodic memeory")
+        return
+
     ids = np.array([memory_id], dtype=np.int64)
 
     removed = index.remove_ids(ids)
@@ -142,11 +150,19 @@ def retrive_vector(query):
         # -1 means FAISS didn't find a result
         if memory_id == -1:
             continue
+        if distance > 1.5: 
+            continue
 
-        results.append(int(memory_id))
+#         results.append(int(memory_id))
+        results.append({
+            "memory_id": int(memory_id),
+            "distance": float(distance)
+         })
 
-    return results
-
+    if results:
+        return results
+        
+    return None
 
 
 # results.append({
@@ -178,10 +194,17 @@ def search_vector(query):
             # -1 means FAISS didn't find a result
         if memory_id == -1:
             continue
+        if distance > 1.5: 
+            continue
     
         results.append(int(memory_id))
     
-    return results
+    # Safely return the first item if it exists, otherwise return None
+    if results:
+
+        return results[0]
+    
+    return None
 
 
 
@@ -191,7 +214,9 @@ def handle_vector(state):
 
     memory = []
     query = ""
-    for operation in state.get("memories", []):
+
+    memory_data = state.get("memory_notes", {})
+    for operation in memory_data.get("memories", []):
         if operation.get("memory_type") != "episodic":
             continue
             
@@ -207,13 +232,13 @@ def handle_vector(state):
         if action == "create":
             operation["memory_id"]=[create_vector(query)]
         elif action == "update":
-            id = search_vector(query=query)
+            id = retrive_vector(query=query)
             update_vector(text=query, memory_id=id[0])
-            operation["memory_id"]=[id]
+            operation["memory_id"]=[id["memory_id"][0]]
         elif action == " delete":
-            id = search_vector(query=query)
+            id = retrive_vector(query=query)
             delete_vector(memory_id=id[0])
-            operation["memory_id"]=[id]
+            operation["memory_id"]=[id["memory_id"][0]]
         elif action == "retrieve":
             retrive_vector(query=query)
         else:

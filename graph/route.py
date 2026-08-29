@@ -3,31 +3,37 @@ from typing import Literal
 from graph.state import MemoryManagerOutput
 
 
-def memory_router(state: MemoryManagerOutput) -> Literal[
-    "profile",
-    "semantic",
-    "episodic",
-    "short_term",
-    "end"
-]:
+def memory_router(state):
     """
-    Decide which memory node should receive the memory-manager output.
+    Decide which memory node(s) should receive the memory-manager output.
+    Returns a single string or a list of strings for parallel routing.
     """
+    memory_data = state.get("memory_notes", {})
+    memory_required = memory_data.get("memory_required", False)
 
-    memory_required = state.get("memory_required", False)
-    if memory_required:
-        memory_type = state.get("memory_type")
-        action = state.get("action")
-        if memory_type == "profile":
-            return "profile"
-        elif memory_type == "semantic":
-            return "semantic"
-        elif memory_type == "episodic":
-            if action in ["update", "delete", "retrieve"]:
-                return "episodic_vt"
-            else:
-                return "episodic"
-        elif memory_type == "short_term":
-            return "short_term"
-    else:
+    # If no memory is required, skip straight to the end/answer
+    if not memory_required:
         return "end"
+
+    # Use a set to avoid duplicate routes (e.g., if there are 2 profile memories)
+    destinations = set()
+
+    for operation in memory_data.get("memories", []):
+        memory_type = operation.get("memory_type")
+        action = operation.get("action")
+        
+        if memory_type == "profile":
+            destinations.add("profile")
+        elif memory_type == "semantic":
+            destinations.add("semantic")
+        elif memory_type == "episodic":
+            destinations.add("episodic_vt")
+        elif memory_type == "short_term":
+            destinations.add("short_term")
+
+    # If the loop finished but we found no valid destinations, go to end
+    if not destinations:
+        return "end"
+
+    # Convert the set to a list so LangGraph can route to all of them in parallel!
+    return list(destinations)

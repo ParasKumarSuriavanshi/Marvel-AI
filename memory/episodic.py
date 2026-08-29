@@ -4,7 +4,7 @@ import uuid
 
 from graph.state import MemoryManagerOutput
 BASE_DIR = Path(__file__).resolve().parent.parent
-DB_PATH = BASE_DIR / "database" / "episodic.db"
+DB_PATH = BASE_DIR / "database" / "sql" / "episodic.db"
 
 def get_connection():
     return sqlite3.connect(DB_PATH)
@@ -50,6 +50,10 @@ def create_episodic_memory(memory_id, user_id, event, date, context, summary, im
 
 
 def update_episodic_memory(memory_id, user_id, event, date, context, summary, importance, confidence, source , updated_at):
+
+    if memory_id == None:
+        print("No memory id provided to the update episodic memeory sql")
+    
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -75,6 +79,10 @@ def update_episodic_memory(memory_id, user_id, event, date, context, summary, im
 
 
 def delete_episodic_memory(memory_id, user_id):
+
+    if memory_id == None:
+        print("No memory id provided to the delete episodic memeory sql")
+    
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -89,14 +97,17 @@ def delete_episodic_memory(memory_id, user_id):
     return deleted > 0  # Return True if a row was deleted, False otherwise
 
 
-def retrieve_episodic_memory(date: str | None, user_id: str, memory_id:list):
+def retrieve_episodic_memory(date: str | None, user_id: str, vector_results):
 
+    if not vector_results:
+        return []
     conn = get_connection()
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
     memories = []
     
-    for i in memory_id:
+    for j in vector_results:
+        i = j["memory_id"]
         if date is None:
             cursor.execute("""
                 SELECT *
@@ -114,9 +125,11 @@ def retrieve_episodic_memory(date: str | None, user_id: str, memory_id:list):
                 AND memory_id = ?
                 ORDER BY date DESC
             """, (date, user_id, i))
-        row = cursor.fetchall()
-        memories.append(dict(row))
-
+        row = cursor.fetchone()
+        if row:
+            memory_data = (dict(row))
+            memory_data["faiss_distance"] = j["distance"]
+            memories.append(memory_data)
     
 
     conn.close()
@@ -130,7 +143,8 @@ def handle_episodic_memory(state):
     """Handles all the CRUD operation for episodic memeory."""
 
     i=0
-    for operation in state.get("memories", []):
+    memory_data = state.get("memory_notes", {})
+    for operation in memory_data.get("memories", []):
         if operation.get("memory_type") != "episodic":
             continue
             
@@ -168,3 +182,14 @@ def handle_episodic_memory(state):
         else:
             print("error in episodoic.py")
         i=i+1
+
+
+
+
+
+
+# if __name__ == "__main__":
+
+#     init_db()
+
+   

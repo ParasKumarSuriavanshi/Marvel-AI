@@ -1,6 +1,6 @@
 from dataclasses import Field
 from typing import Annotated, Optional, Any
-from typing_extensions import TypedDict , NotRequired
+from typing_extensions import TypedDict
 from langgraph.graph.message import Literal, add_messages
 from langchain_core.messages import AnyMessage
 
@@ -22,6 +22,7 @@ class MarvelState(TypedDict):
     messages: Annotated[list[AnyMessage], add_messages]
     memory_notes: dict[str, Any]
     final_response: Optional[str]
+    memory_nodes: MemoryManagerOutput
 
 
 
@@ -34,7 +35,7 @@ class MemoryData(TypedDict, total=False):
     # PROFILE
     category: str
     field: str
-    value: Any
+    value: str  #Any
 
     # SEMANTIC
     subject: str
@@ -81,7 +82,7 @@ class MemoryOperation(TypedDict):
 
     data: MemoryData
     reason: str
-    memory_id:NotRequired[list[int]]
+    memory_id:Optional[list[int]]
     user_id: str
 
 

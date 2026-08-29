@@ -4,17 +4,18 @@ from langchain_core.prompts import PromptTemplate
 from langgraph import graph
 from typer import prompt
 from model.llm import llm
-from graph.state import MarvelState , MemoryManagerOutput
+from graph.fake_state import MemoryManagerOutput
+from graph.state import MarvelState
 from langchain_core.messages import AnyMessage
 
 from memory.profile import get_profile
 from memory.episodic import retrieve_episodic_memory
-from vectorStore.episodic_vt import search_vector
-from vectorStore.semantic import search
+from vectorStore.episodic_vt import retrive_vector
+from vectorStore.semantic import retieve
 from memory.semantic_json import searchjson
 
 
-def manager(MemoryNotes: MemoryManagerOutput, MARVEL_STATE: MarvelState) -> AnyMessage:
+def manager( MARVEL_STATE: MarvelState) -> AnyMessage:
     """This function manages the overall memory related classification. It decides whether the current messages should
     be stored in memory or not, if yes it decides whether it should be stored in short term, long term, working, semantic or episodic memory. 
     It also decides whether the current messages should be used to update the user profile or not. 
@@ -50,16 +51,15 @@ def manager(MemoryNotes: MemoryManagerOutput, MARVEL_STATE: MarvelState) -> AnyM
         1. MEMORY SYSTEM
         ============================================================
 
-        Marvel has four memory types:
+        Marvel has three memory types:
 
         1. PROFILE
         2. SEMANTIC
         3. EPISODIC
-        4. SHORT_TERM
 
         There is also:
 
-        5. NONE
+        4. NONE
 
         Your job is to determine:
 
@@ -80,10 +80,10 @@ def manager(MemoryNotes: MemoryManagerOutput, MARVEL_STATE: MarvelState) -> AnyM
         Normal conversation, questions, commands, explanations, and temporary
         interactions should normally produce:
 
-        {
+        {{
             "memory_required": false,
             "memories": []
-        }
+        }}
 
         ============================================================
         2. CURRENT USER
@@ -91,7 +91,7 @@ def manager(MemoryNotes: MemoryManagerOutput, MARVEL_STATE: MarvelState) -> AnyM
 
         The current user ID is explicitly supplied by the application:
 
-        {MarvelState["user_info"]["user_id"]}
+        {MARVEL_STATE["user_id"]}
 
         IMPORTANT:
 
@@ -110,24 +110,24 @@ def manager(MemoryNotes: MemoryManagerOutput, MARVEL_STATE: MarvelState) -> AnyM
 
         ALWAYS return exactly this top-level structure:
 
-        {
+        {{
             "memory_required": true,
             "memories": [
-                {
+                {{
                     "user_id": "001/Paras",
                     "memory_type": "profile",
                     "action": "update",
                     "confidence": 0.99,
                     "source": "user_explicit",
-                    "data": {
+                    "data": {{
                         "category": "technical",
                         "field": "operating_system",
                         "value": "Arch Linux"
-                    },
+                    }},
                     "reason": "User explicitly requested that their operating system be remembered."
-                }
+                }}
             ]
-        }
+        }}
 
         The ONLY allowed top-level fields are:
 
@@ -165,10 +165,10 @@ def manager(MemoryNotes: MemoryManagerOutput, MARVEL_STATE: MarvelState) -> AnyM
 
         If memory_required is false, memories MUST ALWAYS be an empty array:
 
-        {
+        {{
             "memory_required": false,
             "memories": []
-        }
+        }}
 
         If memory_required is true, memories MUST contain one or more memory objects.
 
@@ -194,17 +194,17 @@ def manager(MemoryNotes: MemoryManagerOutput, MARVEL_STATE: MarvelState) -> AnyM
 
         Therefore:
 
-        {
+        {{
             "memory_required": true,
             "memories": [
-                {
+                {{
                     ...
-                },
-                {
+                }},
+                {{
                     ...
-                }
+                }}
             ]
-        }
+        }}
 
         Do NOT combine unrelated memories into one object.
 
@@ -214,15 +214,15 @@ def manager(MemoryNotes: MemoryManagerOutput, MARVEL_STATE: MarvelState) -> AnyM
 
         Every memory object MUST contain exactly these fields:
 
-        {
+        {{
             "user_id": "...",
             "memory_type": "...",
             "action": "...",
             "confidence": 0.0,
             "source": "...",
-            "data": {...},
+            "data": {{...}},
             "reason": "..."
-        }
+        }}
 
         Required fields:
 
@@ -298,35 +298,35 @@ def manager(MemoryNotes: MemoryManagerOutput, MARVEL_STATE: MarvelState) -> AnyM
 
         PROFILE data MUST contain exactly:
 
-        {
+        {{
             "category": "...",
             "field": "...",
             "value": "..."
-        }
+        }}
 
         Example:
 
-        {
+        {{
             "category": "identity",
             "field": "name",
             "value": "Paras"
-        }
+        }}
 
         Example:
 
-        {
+        {{
             "category": "technical",
             "field": "operating_system",
             "value": "Arch Linux"
-        }
+        }}
 
         Example:
 
-        {
+        {{
             "category": "preferences",
             "field": "response_style",
             "value": "concise"
-        }
+        }}
 
         ------------------------------------------------------------
         PROFILE ACTIONS
@@ -354,19 +354,19 @@ def manager(MemoryNotes: MemoryManagerOutput, MARVEL_STATE: MarvelState) -> AnyM
 
         Output memory:
 
-        {
+        {{
             "user_id": "001/Paras",
             "memory_type": "profile",
             "action": "create",
             "confidence": 0.98,
             "source": "user_stated",
-            "data": {
+            "data": {{
                 "category": "preferences",
                 "field": "preferred_programming_language",
                 "value": "Python"
-            },
+            }},
             "reason": "User stated a stable programming preference."
-        }
+        }}
 
         ------------------------------------------------------------
         PROFILE UPDATE
@@ -391,19 +391,19 @@ def manager(MemoryNotes: MemoryManagerOutput, MARVEL_STATE: MarvelState) -> AnyM
 
         Output:
 
-        {
+        {{
             "user_id": "001/Paras",
             "memory_type": "profile",
             "action": "update",
             "confidence": 0.99,
             "source": "user_stated",
-            "data": {
+            "data": {{
                 "category": "technical",
                 "field": "operating_system",
                 "value": "Arch Linux"
-            },
+            }},
             "reason": "User explicitly indicated a permanent operating system change."
-        }
+        }}
 
         IMPORTANT:
 
@@ -430,19 +430,19 @@ def manager(MemoryNotes: MemoryManagerOutput, MARVEL_STATE: MarvelState) -> AnyM
 
         Output:
 
-        {
+        {{
             "user_id": "001/Paras",
             "memory_type": "profile",
             "action": "append",
             "confidence": 0.97,
             "source": "user_stated",
-            "data": {
+            "data": {{
                 "category": "technical",
                 "field": "programming_languages",
                 "value": "Java"
-            },
+            }},
             "reason": "User added another programming language they use."
-        }
+        }}
 
         Do NOT replace the existing list with only the new value.
 
@@ -458,19 +458,19 @@ def manager(MemoryNotes: MemoryManagerOutput, MARVEL_STATE: MarvelState) -> AnyM
 
         Output:
 
-        {
+        {{
             "user_id": "001/Paras",
             "memory_type": "profile",
             "action": "remove",
             "confidence": 0.98,
             "source": "user_stated",
-            "data": {
+            "data": {{
                 "category": "technical",
                 "field": "programming_languages",
                 "value": "Java"
-            },
+            }},
             "reason": "User stated that they no longer use Java."
-        }
+        }}
 
         ------------------------------------------------------------
         PROFILE DELETE
@@ -484,18 +484,18 @@ def manager(MemoryNotes: MemoryManagerOutput, MARVEL_STATE: MarvelState) -> AnyM
 
         Output:
 
-        {
+        {{
             "user_id": "001/Paras",
             "memory_type": "profile",
             "action": "delete",
             "confidence": 0.99,
             "source": "user_explicit",
-            "data": {
+            "data": {{
                 "category": "technical",
                 "field": "preferred_editor"
-            },
+            }},
             "reason": "User explicitly requested deletion of this profile memory."
-        }
+        }}
 
         ============================================================
         7.2 SEMANTIC MEMORY
@@ -534,12 +534,12 @@ def manager(MemoryNotes: MemoryManagerOutput, MARVEL_STATE: MarvelState) -> AnyM
 
         SEMANTIC data MUST contain exactly:
 
-        {
+        {{
             "subject": "...",
             "predicate": "...",
             "object": "...",
             "content": "..."
-        }
+        }}
 
         The fields mean:
 
@@ -589,20 +589,20 @@ def manager(MemoryNotes: MemoryManagerOutput, MARVEL_STATE: MarvelState) -> AnyM
 
         Output:
 
-        {
+        {{
             "user_id": "001/Paras",
             "memory_type": "semantic",
             "action": "create",
             "confidence": 0.96,
             "source": "user_stated",
-            "data": {
+            "data": {{
                 "subject": "Marvel",
                 "predicate": "uses_framework",
                 "object": "LangGraph",
                 "content": "Marvel uses LangGraph for orchestration."
-            },
+            }},
             "reason": "This is reusable project knowledge."
-        }
+        }}
 
         ------------------------------------------------------------
         SEMANTIC UPDATE
@@ -623,20 +623,20 @@ def manager(MemoryNotes: MemoryManagerOutput, MARVEL_STATE: MarvelState) -> AnyM
 
         Output:
 
-        {
+        {{
             "user_id": "001/Paras",
             "memory_type": "semantic",
             "action": "update",
             "confidence": 0.99,
             "source": "user_stated",
-            "data": {
+            "data": {{
                 "subject": "Marvel",
                 "predicate": "uses_vector_database",
                 "object": "Chroma",
                 "content": "Marvel uses Chroma as its vector database."
-            },
+            }},
             "reason": "User explicitly changed the project's vector database."
-        }
+        }}
 
         IMPORTANT:
 
@@ -656,20 +656,20 @@ def manager(MemoryNotes: MemoryManagerOutput, MARVEL_STATE: MarvelState) -> AnyM
 
         Output:
 
-        {
+        {{
             "user_id": "001/Paras",
             "memory_type": "semantic",
             "action": "delete",
             "confidence": 0.99,
             "source": "user_explicit",
-            "data": {
+            "data": {{
                 "subject": "Marvel",
                 "predicate": "uses_vector_database",
                 "object": "FAISS",
                 "content": "Marvel uses FAISS as its vector database."
-            },
+            }},
             "reason": "User explicitly requested deletion of this semantic memory."
-        }
+        }}
 
         For DELETE:
 
@@ -713,13 +713,13 @@ def manager(MemoryNotes: MemoryManagerOutput, MARVEL_STATE: MarvelState) -> AnyM
 
         EPISODIC data MUST contain exactly:
 
-        {
+        {{
             "event": "...",
             "date": "...",
             "context": "...",
             "summary": "...",
             "importance": 0.0
-        }
+        }}
 
         importance MUST be between 0.0 and 1.0.
 
@@ -748,22 +748,22 @@ def manager(MemoryNotes: MemoryManagerOutput, MARVEL_STATE: MarvelState) -> AnyM
 
         Example:
 
-        {
+        {{
             "user_id": "001/Paras",
             "memory_type": "episodic",
             "action": "create",
             "confidence": 0.96,
             "source": "user_stated",
             "importance": 0.8,
-            "data": {
+            "data": {{
                 "event": "Fixed Vosk model loading problem",
                 "date": "2026-08-13",
                 "context": "Marvel AI",
                 "summary": "The Vosk model loading problem was successfully fixed.",
                 "importance": 0.8
-            },
+            }},
             "reason": "This is a meaningful development event."
-        }
+        }}
 
         IMPORTANT:
 
@@ -792,85 +792,6 @@ def manager(MemoryNotes: MemoryManagerOutput, MARVEL_STATE: MarvelState) -> AnyM
         Use DELETE when the user explicitly requests removal of an episodic memory.
 
         ============================================================
-        7.4 SHORT-TERM MEMORY
-        ============================================================
-
-        SHORT_TERM memory contains information useful only during the current:
-
-        - conversation
-        - task
-        - session
-        - temporary workflow
-
-        It should NOT normally become permanent memory.
-
-        Examples:
-
-        "I'm currently debugging profile.py."
-
-        "The current task is implementing memory routing."
-
-        "For this conversation we're testing the memory manager."
-
-        "I'm using Ubuntu temporarily today."
-
-        ------------------------------------------------------------
-        SHORT-TERM DATA FORMAT
-        ------------------------------------------------------------
-
-        For CREATE or UPDATE:
-
-        {
-            "key": "...",
-            "value": "...",
-            "ttl": 3600
-        }
-
-        For CLEAR or DELETE:
-
-        {
-            "key": "..."
-        }
-
-        ttl MUST be expressed in seconds.
-
-        If the user explicitly provides a duration, convert it to seconds.
-
-        If no duration is provided, estimate a reasonable temporary lifetime based
-        on the context.
-
-        ------------------------------------------------------------
-        SHORT-TERM ACTIONS
-        ------------------------------------------------------------
-
-        Allowed SHORT_TERM actions:
-
-        - create
-        - update
-        - clear
-        - delete
-
-        Use:
-
-        create
-        for new temporary information.
-
-        Use:
-
-        update
-        when existing temporary information changes.
-
-        Use:
-
-        clear
-        when the user wants a temporary value/session context cleared.
-
-        Use:
-
-        delete
-        when a specific temporary memory must be removed.
-
-        ============================================================
         8. NONE
         ============================================================
 
@@ -878,10 +799,10 @@ def manager(MemoryNotes: MemoryManagerOutput, MARVEL_STATE: MarvelState) -> AnyM
 
         NONE is represented by:
 
-        {
+        {{
             "memory_required": false,
             "memories": []
-        }
+        }}
 
         Examples:
 
@@ -906,6 +827,7 @@ def manager(MemoryNotes: MemoryManagerOutput, MARVEL_STATE: MarvelState) -> AnyM
         IMPORTANT:
 
         Questions asking for retrieval are NOT memory creation operations.
+        Temporary context that is not meant to be permanent is also generally NONE.
 
         ============================================================
         9. EXPLICIT MEMORY REQUESTS
@@ -944,10 +866,6 @@ def manager(MemoryNotes: MemoryManagerOutput, MARVEL_STATE: MarvelState) -> AnyM
 
         => EPISODIC
 
-        "Remember that we're currently debugging profile.py."
-
-        => SHORT_TERM
-
         IMPORTANT:
 
         The word "remember" does NOT determine the memory type.
@@ -973,7 +891,6 @@ def manager(MemoryNotes: MemoryManagerOutput, MARVEL_STATE: MarvelState) -> AnyM
         PROFILE -> delete
         SEMANTIC -> delete
         EPISODIC -> delete
-        SHORT_TERM -> clear or delete
 
         Delete ONLY the memory identified by the user.
 
@@ -993,11 +910,7 @@ def manager(MemoryNotes: MemoryManagerOutput, MARVEL_STATE: MarvelState) -> AnyM
 
         "I'm using Ubuntu today because my Arch installation is broken."
 
-        => SHORT_TERM
-
-        Do NOT update:
-
-        operating_system = Ubuntu
+        => NONE (Do NOT update the permanent PROFILE memory for operating_system)
 
         Example:
 
@@ -1011,7 +924,7 @@ def manager(MemoryNotes: MemoryManagerOutput, MARVEL_STATE: MarvelState) -> AnyM
 
         "I'm debugging Marvel today."
 
-        => SHORT_TERM
+        => NONE
 
         Example:
 
@@ -1066,7 +979,7 @@ def manager(MemoryNotes: MemoryManagerOutput, MARVEL_STATE: MarvelState) -> AnyM
         Identify information in the latest user message.
 
         STEP 2:
-        Determine whether the information is worth remembering.
+        Determine whether the information is worth remembering permanently.
 
         STEP 3:
         Determine the correct memory type.
@@ -1108,10 +1021,10 @@ def manager(MemoryNotes: MemoryManagerOutput, MARVEL_STATE: MarvelState) -> AnyM
 
         return:
 
-        {
+        {{
             "memory_required": false,
             "memories": []
-        }
+        }}
 
         Example:
 
@@ -1125,10 +1038,10 @@ def manager(MemoryNotes: MemoryManagerOutput, MARVEL_STATE: MarvelState) -> AnyM
 
         If there is no explicit memory request and nothing changed:
 
-        {
+        {{
             "memory_required": false,
             "memories": []
-        }
+        }}
 
         However:
 
@@ -1199,7 +1112,7 @@ def manager(MemoryNotes: MemoryManagerOutput, MARVEL_STATE: MarvelState) -> AnyM
 
         "I'm using Ubuntu today."
 
-        => SHORT_TERM
+        => NONE
 
         User:
 
@@ -1227,10 +1140,10 @@ def manager(MemoryNotes: MemoryManagerOutput, MARVEL_STATE: MarvelState) -> AnyM
 
         These should normally return:
 
-        {
+        {{
             "memory_required": false,
             "memories": []
-        }
+        }}
 
         The main Marvel system is responsible for retrieving memory.
 
@@ -1287,7 +1200,8 @@ def manager(MemoryNotes: MemoryManagerOutput, MARVEL_STATE: MarvelState) -> AnyM
 
         The user_id MUST come directly from:
 
-        {MarvelState["user_info"]["user_id"]}
+        
+            {MARVEL_STATE["user_id"]}
 
         Do NOT generate or modify it.
 
@@ -1331,10 +1245,10 @@ def manager(MemoryNotes: MemoryManagerOutput, MARVEL_STATE: MarvelState) -> AnyM
 
         If information is uncertain and not explicitly requested, prefer:
 
-        {
+        {{
             "memory_required": false,
             "memories": []
-        }
+        }}
 
         ============================================================
         21. SOURCE
@@ -1419,7 +1333,7 @@ def manager(MemoryNotes: MemoryManagerOutput, MARVEL_STATE: MarvelState) -> AnyM
 
         Today's date is:
 
-        {datetime.now().strftime("%Y-%m-%d")}
+        {datetime.datetime.now().strftime("%Y-%m-%d")}
 
         If the user explicitly mentions a date, use the user's stated date.
 
@@ -1453,53 +1367,53 @@ def manager(MemoryNotes: MemoryManagerOutput, MARVEL_STATE: MarvelState) -> AnyM
 
         Return:
 
-        {
+        {{
             "memory_required": true,
             "memories": [
-                {
+                {{
                     "user_id": "001/Paras",
                     "memory_type": "profile",
                     "action": "update",
                     "confidence": 0.99,
                     "source": "user_explicit",
-                    "data": {
+                    "data": {{
                         "category": "technical",
                         "field": "operating_system",
                         "value": "Arch Linux"
-                    },
+                    }},
                     "reason": "User explicitly requested that their operating system be remembered."
-                },
-                {
+                }},
+                {{
                     "user_id": "001/Paras",
                     "memory_type": "profile",
                     "action": "update",
                     "confidence": 0.99,
                     "source": "user_explicit",
-                    "data": {
+                    "data": {{
                         "category": "preferences",
                         "field": "preferred_editor",
                         "value": "VS Code"
-                    },
+                    }},
                     "reason": "User explicitly requested that their preferred editor be remembered."
-                },
-                {
+                }},
+                {{
                     "user_id": "001/Paras",
                     "memory_type": "episodic",
                     "action": "create",
                     "confidence": 0.96,
                     "source": "user_explicit",
                     "importance": 0.8,
-                    "data": {
+                    "data": {{
                         "event": "Fixed Vosk problem",
                         "date": "2026-08-27",
                         "context": "Marvel AI",
                         "summary": "The Vosk problem was successfully resolved.",
                         "importance": 0.8
-                    },
+                    }},
                     "reason": "User explicitly identified a meaningful project event."
-                }
+                }}
             ]
-        }
+        }}
 
         Each independent memory gets its own object.
 
@@ -1509,85 +1423,55 @@ def manager(MemoryNotes: MemoryManagerOutput, MARVEL_STATE: MarvelState) -> AnyM
 
         PROFILE:
 
-        {
+        {{
             "user_id": "CURRENT_USER_ID",
             "memory_type": "profile",
             "action": "create|update|append|remove|delete",
             "confidence": 0.0,
             "source": "user_explicit|user_stated|conversation_inferred",
-            "data": {
+            "data": {{
                 "category": "...",
                 "field": "...",
                 "value": "..."
-            },
+            }},
             "reason": "..."
-        }
+        }}
 
         SEMANTIC:
 
-        {
+        {{
             "user_id": "CURRENT_USER_ID",
             "memory_type": "semantic",
             "action": "create|update|delete",
             "confidence": 0.0,
             "source": "user_explicit|user_stated|conversation_inferred",
-            "data": {
+            "data": {{
                 "subject": "...",
                 "predicate": "...",
                 "object": "...",
                 "content": "..."
-            },
+            }},
             "reason": "..."
-        }
+        }}
 
         EPISODIC:
 
-        {
+        {{
             "user_id": "CURRENT_USER_ID",
             "memory_type": "episodic",
             "action": "create|update|delete",
             "confidence": 0.0,
             "source": "user_explicit|user_stated|conversation_inferred",
             "importance": 0.0,
-            "data": {
+            "data": {{
                 "event": "...",
                 "date": "...",
                 "context": "...",
                 "summary": "...",
                 "importance": 0.0
-            },
+            }},
             "reason": "..."
-        }
-
-        SHORT_TERM:
-
-        {
-            "user_id": "CURRENT_USER_ID",
-            "memory_type": "short_term",
-            "action": "create|update|clear|delete",
-            "confidence": 0.0,
-            "source": "user_explicit|user_stated|conversation_inferred",
-            "data": {
-                "key": "...",
-                "value": "...",
-                "ttl": 3600
-            },
-            "reason": "..."
-        }
-
-        For SHORT_TERM clear/delete:
-
-        {
-            "user_id": "CURRENT_USER_ID",
-            "memory_type": "short_term",
-            "action": "clear",
-            "confidence": 0.99,
-            "source": "user_explicit",
-            "data": {
-                "key": "..."
-            },
-            "reason": "User explicitly requested removal of temporary memory."
-        }
+        }}
 
         ============================================================
         26. ACTION VALIDATION
@@ -1612,12 +1496,6 @@ def manager(MemoryNotes: MemoryManagerOutput, MARVEL_STATE: MarvelState) -> AnyM
         update
         delete
 
-        SHORT_TERM:
-        create
-        update
-        clear
-        delete
-
         No other action is allowed.
 
         Do NOT output:
@@ -1640,24 +1518,24 @@ def manager(MemoryNotes: MemoryManagerOutput, MARVEL_STATE: MarvelState) -> AnyM
 
         Output:
 
-        {
+        {{
             "memory_required": true,
             "memories": [
-                {
+                {{
                     "user_id": "001/Paras",
                     "memory_type": "profile",
                     "action": "update",
                     "confidence": 0.99,
                     "source": "user_explicit",
-                    "data": {
+                    "data": {{
                         "category": "technical",
                         "field": "operating_system",
                         "value": "Arch Linux"
-                    },
+                    }},
                     "reason": "User explicitly requested that their operating system be remembered."
-                }
+                }}
             ]
-        }
+        }}
 
         ------------------------------------------------------------
 
@@ -1667,24 +1545,24 @@ def manager(MemoryNotes: MemoryManagerOutput, MARVEL_STATE: MarvelState) -> AnyM
 
         Output:
 
-        {
+        {{
             "memory_required": true,
             "memories": [
-                {
+                {{
                     "user_id": "001/Paras",
                     "memory_type": "profile",
                     "action": "update",
                     "confidence": 0.99,
                     "source": "user_stated",
-                    "data": {
+                    "data": {{
                         "category": "identity",
                         "field": "name",
                         "value": "Paras"
-                    },
+                    }},
                     "reason": "User provided their name."
-                }
+                }}
             ]
-        }
+        }}
 
         ------------------------------------------------------------
 
@@ -1694,24 +1572,24 @@ def manager(MemoryNotes: MemoryManagerOutput, MARVEL_STATE: MarvelState) -> AnyM
 
         Output:
 
-        {
+        {{
             "memory_required": true,
             "memories": [
-                {
+                {{
                     "user_id": "001/Paras",
                     "memory_type": "profile",
                     "action": "update",
                     "confidence": 0.98,
                     "source": "user_stated",
-                    "data": {
+                    "data": {{
                         "category": "preferences",
                         "field": "response_style",
                         "value": "concise"
-                    },
+                    }},
                     "reason": "User stated a stable communication preference."
-                }
+                }}
             ]
-        }
+        }}
 
         ------------------------------------------------------------
 
@@ -1721,312 +1599,258 @@ def manager(MemoryNotes: MemoryManagerOutput, MARVEL_STATE: MarvelState) -> AnyM
 
         Output:
 
-        {
+        {{
             "memory_required": true,
             "memories": [
-                {
+                {{
                     "user_id": "001/Paras",
                     "memory_type": "profile",
                     "action": "update",
                     "confidence": 0.99,
                     "source": "user_stated",
-                    "data": {
+                    "data": {{
                         "category": "technical",
                         "field": "operating_system",
                         "value": "Arch Linux"
-                    },
+                    }},
                     "reason": "User explicitly indicated a permanent operating system change."
-                }
+                }}
             ]
-        }
+        }}
 
         ------------------------------------------------------------
 
         EXAMPLE 5
         User:
-        "I'm using Ubuntu today because my Arch installation is broken."
+        "Marvel uses LangGraph for orchestration."
 
         Output:
 
-        {
+        {{
             "memory_required": true,
             "memories": [
-                {
+                {{
                     "user_id": "001/Paras",
-                    "memory_type": "short_term",
+                    "memory_type": "semantic",
                     "action": "create",
-                    "confidence": 0.97,
+                    "confidence": 0.96,
                     "source": "user_stated",
-                    "data": {
-                        "key": "temporary_operating_system",
-                        "value": "Ubuntu",
-                        "ttl": 86400
-                    },
-                    "reason": "User described Ubuntu as a temporary operating system."
-                }
+                    "data": {{
+                        "subject": "Marvel",
+                        "predicate": "uses_framework",
+                        "object": "LangGraph",
+                        "content": "Marvel uses LangGraph for orchestration."
+                    }},
+                    "reason": "This is reusable project knowledge."
+                }}
             ]
-        }
+        }}
 
         ------------------------------------------------------------
 
         EXAMPLE 6
         User:
-        "Marvel uses LangGraph for orchestration."
+        "We changed Marvel's vector database from FAISS to Chroma."
 
         Output:
 
-        {
+        {{
             "memory_required": true,
             "memories": [
-                {
+                {{
                     "user_id": "001/Paras",
                     "memory_type": "semantic",
-                    "action": "create",
-                    "confidence": 0.96,
+                    "action": "update",
+                    "confidence": 0.99,
                     "source": "user_stated",
-                    "data": {
+                    "data": {{
                         "subject": "Marvel",
-                        "predicate": "uses_framework",
-                        "object": "LangGraph",
-                        "content": "Marvel uses LangGraph for orchestration."
-                    },
-                    "reason": "This is reusable project knowledge."
-                }
+                        "predicate": "uses_vector_database",
+                        "object": "Chroma",
+                        "content": "Marvel uses Chroma as its vector database."
+                    }},
+                    "reason": "User explicitly changed the project's vector database."
+                }}
             ]
-        }
+        }}
 
         ------------------------------------------------------------
 
         EXAMPLE 7
         User:
-        "We changed Marvel's vector database from FAISS to Chroma."
-
-        Output:
-
-        {
-            "memory_required": true,
-            "memories": [
-                {
-                    "user_id": "001/Paras",
-                    "memory_type": "semantic",
-                    "action": "update",
-                    "confidence": 0.99,
-                    "source": "user_stated",
-                    "data": {
-                        "subject": "Marvel",
-                        "predicate": "uses_vector_database",
-                        "object": "Chroma",
-                        "content": "Marvel uses Chroma as its vector database."
-                    },
-                    "reason": "User explicitly changed the project's vector database."
-                }
-            ]
-        }
-
-        ------------------------------------------------------------
-
-        EXAMPLE 8
-        User:
         "Today we finally fixed the Vosk model loading problem."
 
         Output:
 
-        {
+        {{
             "memory_required": true,
             "memories": [
-                {
+                {{
                     "user_id": "001/Paras",
                     "memory_type": "episodic",
                     "action": "create",
                     "confidence": 0.96,
                     "source": "user_stated",
                     "importance": 0.8,
-                    "data": {
+                    "data": {{
                         "event": "Fixed Vosk model loading problem",
                         "date": "2026-08-27",
                         "context": "Marvel AI",
                         "summary": "The Vosk model loading problem was successfully fixed.",
                         "importance": 0.8
-                    },
+                    }},
                     "reason": "This is a meaningful development event."
-                }
+                }}
             ]
-        }
+        }}
 
         ------------------------------------------------------------
 
-        EXAMPLE 9
-        User:
-        "I'm currently debugging profile.py."
-
-        Output:
-
-        {
-            "memory_required": true,
-            "memories": [
-                {
-                    "user_id": "001/Paras",
-                    "memory_type": "short_term",
-                    "action": "create",
-                    "confidence": 0.95,
-                    "source": "user_stated",
-                    "data": {
-                        "key": "current_task",
-                        "value": "Debugging profile.py",
-                        "ttl": 3600
-                    },
-                    "reason": "This information is relevant to the current task but is temporary."
-                }
-            ]
-        }
-
-        ------------------------------------------------------------
-
-        EXAMPLE 10
+        EXAMPLE 8
         User:
         "Forget that I use Arch Linux."
 
         Output:
 
-        {
+        {{
             "memory_required": true,
             "memories": [
-                {
+                {{
                     "user_id": "001/Paras",
                     "memory_type": "profile",
                     "action": "delete",
                     "confidence": 0.99,
                     "source": "user_explicit",
-                    "data": {
+                    "data": {{
                         "category": "technical",
                         "field": "operating_system"
-                    },
+                    }},
                     "reason": "User explicitly requested deletion of this profile memory."
-                }
+                }}
             ]
-        }
+        }}
 
         ------------------------------------------------------------
 
-        EXAMPLE 11
+        EXAMPLE 9
         User:
         "Open VS Code."
 
         Output:
 
-        {
+        {{
             "memory_required": false,
             "memories": []
-        }
+        }}
 
         ------------------------------------------------------------
 
-        EXAMPLE 12
+        EXAMPLE 10
         User:
         "What's the weather?"
 
         Output:
 
-        {
+        {{
             "memory_required": false,
             "memories": []
-        }
+        }}
 
         ------------------------------------------------------------
 
-        EXAMPLE 13
+        EXAMPLE 11
         User:
         "How does LangGraph work?"
 
         Output:
 
-        {
+        {{
             "memory_required": false,
             "memories": []
-        }
+        }}
 
         ------------------------------------------------------------
 
-        EXAMPLE 14
+        EXAMPLE 12
         User:
         "Remember that I use Arch Linux and prefer concise responses."
 
         Output:
 
-        {
+       {{
             "memory_required": true,
             "memories": [
-                {
+                {{
                     "user_id": "001/Paras",
                     "memory_type": "profile",
                     "action": "update",
                     "confidence": 0.99,
                     "source": "user_explicit",
-                    "data": {
+                    "data": {{
                         "category": "technical",
                         "field": "operating_system",
                         "value": "Arch Linux"
-                    },
+                    }},
                     "reason": "User explicitly requested that their operating system be remembered."
-                },
-                {
+                }},
+                {{
                     "user_id": "001/Paras",
                     "memory_type": "profile",
                     "action": "update",
                     "confidence": 0.99,
                     "source": "user_explicit",
-                    "data": {
+                    "data": {{
                         "category": "preferences",
                         "field": "response_style",
                         "value": "concise"
-                    },
+                    }},
                     "reason": "User explicitly requested that their communication preference be remembered."
-                }
+                }}
             ]
-        }
+        }}
 
         ------------------------------------------------------------
 
-        EXAMPLE 15
+        EXAMPLE 13
         User:
         "Remember that I use Arch Linux, and today we finally fixed the Vosk issue."
 
         Output:
 
-        {
+        {{
             "memory_required": true,
             "memories": [
-                {
+                {{
                     "user_id": "001/Paras",
                     "memory_type": "profile",
                     "action": "update",
                     "confidence": 0.99,
                     "source": "user_explicit",
-                    "data": {
+                    "data": {{
                         "category": "technical",
                         "field": "operating_system",
                         "value": "Arch Linux"
-                    },
+                    }},
                     "reason": "User explicitly requested that their operating system be remembered."
-                },
-                {
+                }},
+                {{
                     "user_id": "001/Paras",
                     "memory_type": "episodic",
                     "action": "create",
                     "confidence": 0.96,
                     "source": "user_explicit",
                     "importance": 0.8,
-                    "data": {
+                    "data": {{
                         "event": "Fixed Vosk issue",
                         "date": "2026-08-27",
                         "context": "Marvel AI",
                         "summary": "The Vosk issue was successfully resolved.",
                         "importance": 0.8
-                    },
+                    }},
                     "reason": "User explicitly identified a meaningful project event."
-                }
+                }}
             ]
-        }
+        }}
 
         ============================================================
         28. CURRENT INPUT
@@ -2034,30 +1858,30 @@ def manager(MemoryNotes: MemoryManagerOutput, MARVEL_STATE: MarvelState) -> AnyM
 
         Current user ID:
 
-        {MemoryNotes["memories"][0]["user_id"]}
+        {MARVEL_STATE["user_id"]}
 
         Current conversation:
 
-        {MarvelState["messages"]}
+        {MARVEL_STATE["messages"]}
 
         Latest user message or query:
 
-        {MarvelState["messages"][-1].content}
+        {MARVEL_STATE["messages"][-1].content}
 
         Relevant existing memories for this user:
 
             Profile info for this user:
-                {get_profile(user_id=MemoryNotes["memories"][0]["user_id"])}
+                {get_profile(user_id=MARVEL_STATE["user_id"])}
         
             Episodic memory info related to lastest user message/query:
-                {retrieve_episodic_memory(user_id=MemoryNotes["memories"][0]["user_id"] , memory_id=search_vector(MarvelState["messages"][-1].content))}
+                {retrieve_episodic_memory(date=None, user_id=MARVEL_STATE["user_id"] , vector_results=retrive_vector(MARVEL_STATE["messages"][-1].content))}
 
             Semantic memory info related to lastest user message/query:
-                {searchjson(search(MarvelState["messages"][-1].content))}
+                {searchjson(retieve(MARVEL_STATE["messages"][-1].content))}
 
         Today's date:
 
-        {datetime.now().strftime("%Y-%m-%d")}
+        {datetime.datetime.now().strftime("%Y-%m-%d")}
 
         If the user explicitly provides a different date, use the user's date.
 
@@ -2088,7 +1912,6 @@ def manager(MemoryNotes: MemoryManagerOutput, MARVEL_STATE: MarvelState) -> AnyM
         - profile
         - semantic
         - episodic
-        - short_term
         - none
 
         STEP 7:
@@ -2121,10 +1944,10 @@ def manager(MemoryNotes: MemoryManagerOutput, MARVEL_STATE: MarvelState) -> AnyM
         STEP 16:
         If no memory operation is required, return:
 
-        {
+        {{
             "memory_required": false,
             "memories": []
-        }
+        }}
 
         ============================================================
         30. FINAL OUTPUT VALIDATION
@@ -2152,7 +1975,7 @@ def manager(MemoryNotes: MemoryManagerOutput, MARVEL_STATE: MarvelState) -> AnyM
         - reason
 
         6. user_id exactly equals:
-        {MarvelState["user_info"]["user_id"]}
+        {MARVEL_STATE["user_id"]}
 
         7. Episodic memory additionally contains:
         - importance
@@ -2175,43 +1998,33 @@ def manager(MemoryNotes: MemoryManagerOutput, MARVEL_STATE: MarvelState) -> AnyM
             - summary
             - importance
 
-        11. SHORT_TERM data contains:
-            - key
-            - value
-            - ttl
-            when action is create/update.
+        11. confidence is between 0.0 and 1.0.
 
-        12. SHORT_TERM clear/delete contains:
-            - key
+        12. Episodic importance is between 0.0 and 1.0.
 
-        13. confidence is between 0.0 and 1.0.
-
-        14. Episodic importance is between 0.0 and 1.0.
-
-        15. source is one of:
+        13. source is one of:
             - user_explicit
             - user_stated
             - conversation_inferred
 
-        16. memory_type is one of:
+        14. memory_type is one of:
             - profile
             - semantic
             - episodic
-            - short_term
 
-        17. action is valid for the selected memory_type.
+        15. action is valid for the selected memory_type.
 
-        18. No duplicate memory operations are produced unnecessarily.
+        16. No duplicate memory operations are produced unnecessarily.
 
-        19. No information is invented.
+        17. No information is invented.
 
-        20. No markdown is returned.
+        18. No markdown is returned.
 
-        21. No code fence is returned.
+        19. No code fence is returned.
 
-        22. No explanation is returned.
+        20. No explanation is returned.
 
-        23. No text appears before or after the JSON.
+        21. No text appears before or after the JSON.
 
         ============================================================
         31. FINAL RULE
@@ -2246,6 +2059,8 @@ def manager(MemoryNotes: MemoryManagerOutput, MARVEL_STATE: MarvelState) -> AnyM
 
     structured_llm = llm.with_structured_output(MemoryManagerOutput)
 
-    response = structured_llm.invoke(prompt)
-
-    return response.model_dump()
+    response = structured_llm.invoke(memory_manager_prompt)
+    print("============manager=============")
+    print(response)
+    print("============manager=============")
+    return {"memory_notes": response}#sjdshd

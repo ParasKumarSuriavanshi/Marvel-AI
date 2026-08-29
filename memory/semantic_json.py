@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from graph.state import MemoryManagerOutput
 
-METADATA_PATH = Path("database/vector/json/semantic_metadata.json")
+METADATA_PATH = Path("database/json/semantic_metadata.json")
 
 
 
@@ -31,12 +31,16 @@ def create(memory_id , data):
 def searchjson(r):
     metadata = load_metadata()
 
+    if not r:
+        return "No relevant memories found."
     text = ""
-    for i, mem_id in enumerate(r):
+    for i, result in enumerate(r):
         # Get data from JSON using the stringified ID
-        json_data = metadata.get(str(mem_id), "No additional data found")
-        
-        text += f"reference {i}: {json_data} \n"
+        id = result["memory_id"]
+        json_data = metadata.get(str(id), "No additional data found")
+
+        distance_score = result["distance"]
+        text += f"reference {i} (faiss_distance: {distance_score}): {json_data} \n"
      
     # for i in range(r(len)):
     #     text = text + f"reference {i}: {metadata.get(str(r[i]["memory_id"]))} \n"
@@ -47,6 +51,9 @@ def searchjson(r):
 
 
 def update(memory_id: int, new_data: dict):
+
+    if memory_id == None:
+        print("No memory id provided to the update semantic memeory json")
     metadata = load_metadata()
 
     memory_id = str(memory_id)
@@ -60,6 +67,9 @@ def update(memory_id: int, new_data: dict):
 
 
 def delete(memory_id: int):
+
+    if memory_id == None:
+        print("No memory id provided to the delete semantic memeory json")
     metadata = load_metadata()
 
     memory_id = str(memory_id)
@@ -75,7 +85,11 @@ def delete(memory_id: int):
 def handle_json(state):
     """THis function help in handling all the CRUD operation in JSON file."""
     i=0
-    for operation in state.get("memories", []):
+    memory_data = state.get("memory_notes", {})
+
+    for operation in memory_data.get("memories", []):
+        if operation.get("memory_type") != "semantic":
+            continue
         
         # Now you can access the keys for each individual operation
         action = operation.get("action")

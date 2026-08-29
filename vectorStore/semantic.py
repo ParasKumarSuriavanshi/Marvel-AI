@@ -31,7 +31,7 @@ else:
 import json
 from pathlib import Path
 
-METADATA_PATH = Path("database/vector/json/semantic_metadata.json")
+METADATA_PATH = Path("database/json/semantic_metadata.json")
 
 def load_metadata():
     with open(METADATA_PATH, "r") as f:
@@ -77,7 +77,9 @@ def create_add(data: str , ):
 def update(data: str , memory_id: int):
     """This function helps in updateing the vector db info. Based on the Faiss ID provided in it."""
 
-
+    if memory_id == None:
+        print("No memory id provided to the update semantic memeory")
+        return
     new_vector = embedding_model.embed_query(data)
 
         # Convert to NumPy array
@@ -114,6 +116,8 @@ def search(data: str):
         # -1 means FAISS didn't find a result
         if memory_id == -1:
             continue
+        if distance > 1.5: 
+            continue
 
         # results.append({
         #     "memory_id": int(memory_id),
@@ -122,7 +126,48 @@ def search(data: str):
         results.append(int(memory_id))
 
 
-    return results
+    # Safely return the first item if it exists, otherwise return None
+        if results:
+    
+            return results[0]
+        
+        return None
+    
+
+
+
+def retieve(data: str):
+    """This function helps in searching the vector db based on the query."""
+
+
+    query_embedding = embedding_model.embed_query(data)
+    query_vector = np.array([query_embedding],dtype=np.float32)
+
+    distances, ids = index.search(query_vector,k=5)
+
+    results = []
+
+    for memory_id, distance in zip(ids[0], distances[0]):
+
+        # -1 means FAISS didn't find a result
+        if memory_id == -1:
+            continue
+        if distance > 1.5: 
+            continue
+
+        # results.append({
+        #     "memory_id": int(memory_id),
+        #     "distance": float(distance)
+        # })
+        results.append({
+                    "memory_id": int(memory_id),
+                    "distance": float(distance)
+                 })
+        
+    if results:
+        return results
+                
+    return None
 
 
 
@@ -131,6 +176,9 @@ def search(data: str):
 def delete(memory_id: int):
     """This function helps in deleting the data from vector db based on the memory ID."""
 
+    if memory_id == None:
+        print("No memory id provided to the delete semantic memeory")
+        return
 
     ids = np.array([memory_id], dtype=np.int64)
 
@@ -144,8 +192,9 @@ def delete(memory_id: int):
 
 def handle_semantic(state):
     """This function decide which CRUD operation to be carried out based on the input taken from the state."""
-    
-    for operation in state.get("memories", []):
+
+    memory_data = state.get("memory_notes", {})
+    for operation in memory_data.get("memories", []):
         if operation.get("memory_type") != "semantic":
             continue
             
@@ -155,14 +204,14 @@ def handle_semantic(state):
         if action == "create":
             operation["memory_id"] = [create_add(data)]
         elif action == "update":
-            id = search(data)
-            update(data , id[0]["memory_id"])
-            operation["memory_id"] = [id]
+            id = retieve(data)
+            update(data , id["memory_id"][0])
+            operation["memory_id"] = [id["memory_id"][0]]
         elif action == "retrieve":
             search(data)
         elif action == "delete":
-            id = search(data)
-            delete(data , id[0]["memory_id"])
-            operation["memory_id"] = [id]
+            id = retieve(data)
+            delete(id["memory_id"][0])
+            operation["memory_id"] = [id["memory_id"][0]]
 
     return {"memories":state.get("memories",[])}

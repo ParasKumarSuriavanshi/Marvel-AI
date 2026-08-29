@@ -92,6 +92,7 @@ def get_profile(
     field: str | None = None
     ):
     conn = get_connection()
+    conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 
     if category and field:
@@ -161,98 +162,59 @@ def get_profile(
 def handle_profile_memory(state):
     """Handles all the CRUD operation for the profile memory."""
 
-
-    for operation in state.get("memories", []):
-        if operation.get("memory_type") != "semantic":
+    memory_data = state.get("memory_notes", {})
+    for operation in memory_data.get("memories", []):
+        if operation.get("memory_type") != "profile":
             continue
 
         action = operation.get("action")
         user_id = operation.get("user_id")
-        data = operation.get(data,{})
+        data = operation.get("data",{})
         category = data.get('category', '')
         field = data.get('field', '')
         value = data.get('value', '')
-        importance = data.get('importance', '')
-        confidence = operation.get("confidence")
+        importance = data.get('importance', 0.5)
+        confidence = operation.get("confidence",0.5)
         source = operation.get("source")
 
     
 
-    if action in ("create", "update"):
+        if action in ("create", "update"):
 
-        update_profile(
-            user_id=user_id,
-            category=category,
-            field=field,
-            value=value,
-            confidence=confidence,
-            importance=importance,
-            source=source
-        )
+            update_profile(
+                user_id=user_id,
+                category=category,
+                field=field,
+                value=value,
+                confidence=confidence,
+                importance=importance,
+                source=source
+            )
 
-        print("profile created success")
-
-
-
-    elif action == "delete":
-
-        deleted = delete_profile(
-            user_id=user_id,
-            category=category,
-            field=field
-        )
-
-        print("profile deleted success")
-    else:
-        return {
-            "status": "error",
-            "message": f"Unsupported profile action: {action}"
-        }
-
-    
+            print("profile created success")
 
 
-if __name__ == "__main__":
 
-    init_db()
+        elif action == "delete":
 
-    test_memory = {
-        "memory_type": "profile",
-        "action": "update",
-        "confidence": 0.99,
-        "importance": 1.0,
-        "source": "user_explicit",
-        "data": {
-            "category": "identity",
-            "field": "name",
-            "value": "Paras Kumar"
-        }
-    }
+            deleted = delete_profile(
+                user_id=user_id,
+                category=category,
+                field=field
+            )
 
-    test_memory_2 = {
-        "memory_type": "profile",
-        "action": "update",
-        "confidence": 0.96,
-        "importance": 0.85,
-        "source": "user_stated",
-        "data": {
-            "category": "preferences",
-            "field": "response_length",
-            "value": "concise"
-        }
-    }
+            print("profile deleted success")
+        else:
+            return {
+                "status": "error",
+                "message": f"Unsupported profile action: {action}"
+            }
+
+        
 
 
-    result = handle_profile_memory(
-        user_id="paras",
-        memory=test_memory
-    )
+# if __name__ == "__main__":
 
-    handle_profile_memory(
-        user_id="paras",
-        memory=test_memory_2
-    )
+#     init_db()
 
-    print(result)
-
-    print(get_profile("paras"))
+   
