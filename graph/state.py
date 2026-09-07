@@ -4,6 +4,31 @@ from typing_extensions import TypedDict
 from langgraph.graph.message import Literal, add_messages
 from langchain_core.messages import AnyMessage
 
+
+def reducer_memory_nodes(left :MemoryManagerOutput, right: MemoryManagerOutput) -> "MemoryManagerOutput":
+    """Reducer function to safely merge memory_nodes from parallel branches."""
+    if not left:
+        return right
+    if not right:
+        return left
+    
+    merged_memories = []
+    left_mems = left.get("memories", [])
+    right_mems = right.get("memories", [])
+    
+    # Merge lists item by item
+    for i in range(max(len(left_mems), len(right_mems))):
+        l_mem = left_mems[i] if i < len(left_mems) else {}
+        r_mem = right_mems[i] if i < len(right_mems) else {}
+        
+        # Combine the dictionaries. Both parallel node updates are preserved.
+        merged_memories.append({**l_mem, **r_mem})
+        
+    return {
+        "memory_required": right.get("memory_required", left.get("memory_required")),
+        "memories": merged_memories
+    }
+
 # class MemoryNotes(TypedDict):
 #     memory_id: str
 #     user_id: str
@@ -20,9 +45,8 @@ from langchain_core.messages import AnyMessage
 class MarvelState(TypedDict):
     user_id: str
     messages: Annotated[list[AnyMessage], add_messages]
-    memory_notes: dict[str, Any]
     final_response: Optional[str]
-    memory_nodes: MemoryManagerOutput
+    memory_nodes: Annotated[MemoryManagerOutput, reducer_memory_nodes]
 
 
 
@@ -82,7 +106,7 @@ class MemoryOperation(TypedDict):
 
     data: MemoryData
     reason: str
-    memory_id:Optional[list[int]]
+    memory_id:Optional[int]
     user_id: str
 
 
@@ -91,11 +115,3 @@ class MemoryManagerOutput(TypedDict):
     memories: list[MemoryOperation]
 
 
-
-class episodic_memory(TypedDict):
-    action: Literal["create" , "update" , "delete" , "retrieve"]
-    confidence: float
-    importance: float
-    source: Literal["user_explicit" , "user_stated" , "conversation_inferred"]
-    data: MemoryData
-    reason: str

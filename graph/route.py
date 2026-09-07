@@ -8,7 +8,7 @@ def memory_router(state):
     Decide which memory node(s) should receive the memory-manager output.
     Returns a single string or a list of strings for parallel routing.
     """
-    memory_data = state.get("memory_notes", {})
+    memory_data = state.get("memory_nodes", {})
     memory_required = memory_data.get("memory_required", False)
 
     # If no memory is required, skip straight to the end/answer
@@ -20,7 +20,7 @@ def memory_router(state):
 
     for operation in memory_data.get("memories", []):
         memory_type = operation.get("memory_type")
-        action = operation.get("action")
+        #action = operation.get("action")
         
         if memory_type == "profile":
             destinations.add("profile")

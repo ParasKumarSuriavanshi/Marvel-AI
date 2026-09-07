@@ -64,7 +64,6 @@ def build():
     {
         "profile": "profile",
         "semantic": "semantic",
-        "episodic": "episodic",
         "episodic_vt": "episodic_vt",
         "short_term": "answer",
         "end": "answer",

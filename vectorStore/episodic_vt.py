@@ -12,7 +12,7 @@ from graph.state import MemoryManagerOutput , MemoryOperation
 #------------------------
 import sqlite3
 BASE_DIRT = Path(__file__).resolve().parent.parent
-DB_PATHH = BASE_DIRT / "database" / "episodic.db"
+DB_PATHH = BASE_DIRT / "database" / "sql" / "episodic.db"
 
 def get_connection():
     return sqlite3.connect(DB_PATHH)
@@ -48,15 +48,15 @@ else:
 
 
 
-def create_vector(text):
+def create_vector(text,memory_id: int):
     """Create and add an episodic memory vector."""
 
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute("""SELECT MAX(memory_id) FROM episodic_memories;""")
-    results = cursor.fetchone()
-    previous_memory_id = results[0] if results[0] is not None else 0
-    memory_id = previous_memory_id + 1
+    # conn = get_connection()
+    # cursor = conn.cursor()
+    # cursor.execute("""SELECT MAX(memory_id) FROM episodic_memories;""")
+    # results = cursor.fetchone()
+    # previous_memory_id = results[0] if results[0] is not None else 0
+    # memory_id = previous_memory_id + 1
 
 
 
@@ -211,12 +211,26 @@ def search_vector(query):
 
 def handle_vector(state):
     """Here we decide which function to call according to the need."""
+    print("Handling episodic memory vector operations...")
+
+
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""SELECT MAX(memory_id) FROM episodic_memories;""")
+    results = cursor.fetchone()
+    previous_memory_id = results[0] if results[0] is not None else 0
+    current_memory_id = previous_memory_id + 1
+
+
+
 
     memory = []
     query = ""
 
-    memory_data = state.get("memory_notes", {})
-    for operation in memory_data.get("memories", []):
+    memory_data = state.get("memory_nodes", {})
+    memories_list = memory_data.get("memories", [])
+
+    for operation in memories_list:
         if operation.get("memory_type") != "episodic":
             continue
             
@@ -229,20 +243,41 @@ def handle_vector(state):
             f"Summary: {data.get('summary', '')}. "
             f"Date: {data.get('date', '')}.")
 
+        
+        print(f"Constructed query for action '{action}': {query}")
+
+
         if action == "create":
-            operation["memory_id"]=[create_vector(query)]
+            print(f"Creating episodic memory vector for query: {query}")
+            operation["memory_id"]=create_vector(query, current_memory_id)
+            print(f"Created episodic memory with ID: {operation['memory_id']}.")
+            current_memory_id += 1  # Increment the ID for the next creation
         elif action == "update":
             id = retrive_vector(query=query)
-            update_vector(text=query, memory_id=id[0])
-            operation["memory_id"]=[id["memory_id"][0]]
-        elif action == " delete":
+            if id:
+                extracted_id = id[0]["memory_id"]
+                update_vector(text=query, memory_id=extracted_id)
+                operation["memory_id"]=extracted_id
+                print(f"Updated episodic memory with ID: {operation['memory_id']}.")
+            else:
+                print("No id found in episodic vt")
+        elif action == "delete":
             id = retrive_vector(query=query)
-            delete_vector(memory_id=id[0])
-            operation["memory_id"]=[id["memory_id"][0]]
+            if id:
+                extracted_id = id[0]["memory_id"]
+                delete_vector(memory_id=extracted_id)
+                operation["memory_id"]=extracted_id
+                print(f"Deleted episodic memory with ID: {operation['memory_id']}.")
+            else:
+                print("No id found in episodic vt")
         elif action == "retrieve":
             retrive_vector(query=query)
         else:
-            print("error is in the action ot valid")
+            print("error is in the action ot valid episodic vt")
 
-    return {"memories":state.get("memories", [])}
+    # Update the memory_data dict with the mutated list
+    memory_data["memories"] = memories_list
+
+    # Return the exact top-level key defined in MarvelState
+    return {"memory_nodes": memory_data}
         

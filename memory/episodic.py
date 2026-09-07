@@ -142,8 +142,8 @@ def retrieve_episodic_memory(date: str | None, user_id: str, vector_results):
 def handle_episodic_memory(state):
     """Handles all the CRUD operation for episodic memeory."""
 
-    i=0
-    memory_data = state.get("memory_notes", {})
+    #i=0
+    memory_data = state.get("memory_nodes", {})
     for operation in memory_data.get("memories", []):
         if operation.get("memory_type") != "episodic":
             continue
@@ -154,14 +154,18 @@ def handle_episodic_memory(state):
         data = operation.get("data", {})
         importance = data.get("importance", 1.0)
         user_id = operation.get("user_id")
-        memory_id = operation.get("memory_id")[i]
+        memory_id = operation.get("memory_id")
+
+        if memory_id is None:
+            print(f"Error: memory_id is required for action '{action}' but is missing in episodic sql.")
+            break
 
         if not user_id:
             return {"status": "error", "message": "user_id is missing from state"}
 
         if action == "create":
             create_episodic_memory(memory_id=memory_id, user_id=user_id, event=data.get("event"),date=data.get("date"), context=data.get("context"), summary=data.get("summary"), importance=importance, confidence=confidence, source=source)
-            print("episodic create success")
+            print("episodic create success sql")
         elif action == "update":
             if not memory_id:
                 return {
@@ -169,19 +173,19 @@ def handle_episodic_memory(state):
                     "message": "memory_id required for update"
                 }
             update_episodic_memory(memory_id=memory_id, user_id=user_id, event=data.get("event"),date=data.get("date"), context=data.get("context"), summary=data.get("summary"), importance=importance, confidence=confidence, source=source, updated_at=data.get("date"))
-            print("episodic update success")
+            print("episodic update success sql")
         elif action == "delete":
             delete_episodic_memory(memory_id=memory_id, user_id=user_id)
             #return {"status": "success" if deleted else "not_found"}
-            print("episodic delete success")
+            print("episodic delete success sql")
                         
         elif action == "retrieve":
             date = data.get("date")
             memories = retrieve_episodic_memory(date=date, user_id=user_id, memory_id= memory_id)
             return {"memories": memories}
         else:
-            print("error in episodoic.py")
-        i=i+1
+            print("error in episodoic.py sql")
+#i=i+1
 
 
 
@@ -189,7 +193,6 @@ def handle_episodic_memory(state):
 
 
 # if __name__ == "__main__":
-
 #     init_db()
 
    

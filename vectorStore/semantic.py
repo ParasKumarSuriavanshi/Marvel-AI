@@ -51,11 +51,11 @@ def generate_memory_id(metadata: dict) -> int:
 
 
 
-def create_add(data: str , ):
+def create_add(data: str , memory_id: int):
     """This function help in creating or adding a new info into the vector db."""
 
-    metadata = load_metadata()
-    memory_id = generate_memory_id(metadata=metadata)
+    # metadata = load_metadata()
+    # memory_id = generate_memory_id(metadata=metadata)
 
     vector = embedding_model.embed_query(data)
     vector = np.array([vector],dtype=np.float32)
@@ -193,25 +193,52 @@ def delete(memory_id: int):
 def handle_semantic(state):
     """This function decide which CRUD operation to be carried out based on the input taken from the state."""
 
-    memory_data = state.get("memory_notes", {})
-    for operation in memory_data.get("memories", []):
+    query = ""
+    current_id = generate_memory_id(load_metadata())
+    memory_data = state.get("memory_nodes", {})
+    memories_list = memory_data.get("memories", [])
+    
+    for operation in memories_list:
         if operation.get("memory_type") != "semantic":
             continue
             
         action = operation.get("action")
         data = operation.get("data", {})
+        query = (
+            f"subject: {data.get('subject', '')}. "
+            f"predicate: {data.get('predicate', '')}. "
+            f"object: {data.get('object', '')}. "
+            f"content: {data.get('content', '')}.")
 
         if action == "create":
-            operation["memory_id"] = [create_add(data)]
+            operation["memory_id"] = create_add(query, current_id)
+            print(f"Created semantic memory with ID: {operation['memory_id']}.")
+            current_id += 1  # Increment the ID for the next creation
         elif action == "update":
-            id = retieve(data)
-            update(data , id["memory_id"][0])
-            operation["memory_id"] = [id["memory_id"][0]]
+            id = retieve(query)
+            if id:
+                extract_id = id[0]["memory_id"]
+                update(query , extract_id)
+                operation["memory_id"] = extract_id
+                print(f"Updated semantic memory with ID: {operation['memory_id']}.")
+            else:
+                print("No id found in semantic vt")
         elif action == "retrieve":
-            search(data)
+            search(query)
         elif action == "delete":
-            id = retieve(data)
-            delete(id["memory_id"][0])
-            operation["memory_id"] = [id["memory_id"][0]]
+            id = retieve(query)
+            if id:
+                extract_id = id[0]["memory_id"]
+                delete(extract_id)
+                operation["memory_id"] = extract_id
+                print(f"Deleted semantic memory with ID: {operation['memory_id']}.")
+            else:
+                print("No id found in semantic vt")
+        else:
+            print(f"Unknown action: {action} for semantic memory operation vt.")
 
-    return {"memories":state.get("memories",[])}
+    # Update the memory_data dict with the mutated list
+    memory_data["memories"] = memories_list
+    
+        # Return the exact top-level key defined in MarvelState
+    return {"memory_nodes": memory_data}

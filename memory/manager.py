@@ -15,7 +15,7 @@ from vectorStore.semantic import retieve
 from memory.semantic_json import searchjson
 
 
-def manager( MARVEL_STATE: MarvelState) -> AnyMessage:
+def manager(MARVEL_STATE):
     """This function manages the overall memory related classification. It decides whether the current messages should
     be stored in memory or not, if yes it decides whether it should be stored in short term, long term, working, semantic or episodic memory. 
     It also decides whether the current messages should be used to update the user profile or not. 
@@ -835,6 +835,12 @@ def manager( MARVEL_STATE: MarvelState) -> AnyMessage:
 
         Explicit memory requests have very high priority.
 
+        IMPORTANT: 
+        
+        If the user explicitly asks you to remember something vague or ongoing, 
+        DO NOT reject it. You must do your best to infer the necessary schema values 
+        (e.g., infer a subject/predicate/object) to fulfill the user's explicit command.
+
         Examples:
 
         - remember this
@@ -846,7 +852,8 @@ def manager( MARVEL_STATE: MarvelState) -> AnyMessage:
         - don't forget this
         - note this
         - add this to my profile
-
+        - store in
+        - store it in
         When the user explicitly asks Marvel to remember something, you MUST
         consider it for memory storage.
 
@@ -2030,6 +2037,8 @@ def manager( MARVEL_STATE: MarvelState) -> AnyMessage:
         31. FINAL RULE
         ============================================================
 
+        When the user explicitly asks Marvel to remember something, you MUST consider it for memory storage.
+
         You are the MEMORY MANAGER.
 
         You are NOT Marvel's conversational assistant.
@@ -2057,10 +2066,75 @@ def manager( MARVEL_STATE: MarvelState) -> AnyMessage:
         Return ONLY the JSON object.
         """
 
-    structured_llm = llm.with_structured_output(MemoryManagerOutput)
 
-    response = structured_llm.invoke(memory_manager_prompt)
+#     response = {
+#     "memory_required": True,
+#     "memories": [
+#         {
+#             "user_id": "paras",
+#             "memory_type": "profile",
+#             "action": "delete",
+#             "confidence": 0.99,
+#             "source": "user_explicit",
+#             "data": {
+#                 "category": "technical",
+#                 "field": "operating_system",
+#                 "value": "Arch Linux"
+#             },
+#             "reason": "User explicitly stated their operating system preference."
+#         },
+#         {
+#             "user_id": "paras",
+#             "memory_type": "profile",
+#             "action": "delete",
+#             "confidence": 0.95,
+#             "source": "user_stated",
+#             "data": {
+#                 "category": "preferences",
+#                 "field": "response_style",
+#                 "value": "concise"
+#             },
+#             "reason": "User requested concise and short answers."
+#         }
+#     ]
+# }
+
+
+
+#     response = {
+#     "memory_required": True,
+#     "memories": [
+#         {
+#             "user_id": "paras",
+#             "memory_type": "profile",
+#             "action": "delete",
+#             "confidence": 0.99,
+#             "source": "user_explicit",
+#             "data": {
+#                 "category": "technical",
+#                 "field": "operating_system",
+#                 "value": "ubuntu Linux"
+#             },
+#             "reason": "User explicitly stated their operating system."
+#         }
+#     ]
+# }
+
+
+
+    # response = {
+    # "memory_required": False,
+    # "memories": []
+    # }
+
+    structured_response = llm.with_structured_output(MemoryManagerOutput)
+    response = structured_response(memory_manager_prompt)
     print("============manager=============")
     print(response)
     print("============manager=============")
-    return {"memory_notes": response}#sjdshd
+
+
+
+    
+
+    return {"memory_nodes": response}#sjdshd

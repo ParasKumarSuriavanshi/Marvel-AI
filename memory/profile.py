@@ -162,7 +162,7 @@ def get_profile(
 def handle_profile_memory(state):
     """Handles all the CRUD operation for the profile memory."""
 
-    memory_data = state.get("memory_notes", {})
+    memory_data = state.get("memory_nodes", {})
     for operation in memory_data.get("memories", []):
         if operation.get("memory_type") != "profile":
             continue

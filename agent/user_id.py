@@ -71,6 +71,6 @@ def user_id_extractor(state:MarvelState):
     llm_st = llm.with_structured_output(struct)
     result = llm_st.invoke(prompt)
 
-    state["user_id"] = result.user_id
+    state["user_id"] = result.user_id if result.user_id else "paras"
 
     return state

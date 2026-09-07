@@ -84,8 +84,8 @@ def delete(memory_id: int):
 
 def handle_json(state):
     """THis function help in handling all the CRUD operation in JSON file."""
-    i=0
-    memory_data = state.get("memory_notes", {})
+    #i=0
+    memory_data = state.get("memory_nodes", {})
 
     for operation in memory_data.get("memories", []):
         if operation.get("memory_type") != "semantic":
@@ -94,19 +94,23 @@ def handle_json(state):
         # Now you can access the keys for each individual operation
         action = operation.get("action")
         data = operation.get("data", {})
-        memory_id = operation.get("memory_id",[])[i]
+        memory_id = operation.get("memory_id")
+
+        if memory_id is None:
+            print(f"Error: memory_id is required for action '{action}' but is missing in semantic json.")
+            break
 
         if action == "create":
             create(memory_id=memory_id ,data= data)
-            print("semantic create success")
+            print("semantic create success json")
         elif action == "delete":
             delete(memory_id)
-            print("semantic delete success")
+            print("semantic delete success json")
         elif action == "update":
             update(memory_id,data)
-            print("semantic update success")
+            print("semantic update success json")
         else:
             print("error in semantic json")
 
 
-        i=i+1
+#i=i+1

@@ -1,5 +1,5 @@
 
-from typing import TypedDict, Literal, Any
+from typing import TypedDict, Literal, Any, Optional
 class MemoryData(TypedDict, total=False):
     # PROFILE
     category: str
@@ -51,7 +51,7 @@ class MemoryOperation(TypedDict):
 
     data: MemoryData
     reason: str
-    user_id: str
+    user_id: Optional[str]
 
 
 class MemoryManagerOutput(TypedDict):
