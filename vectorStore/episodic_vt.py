@@ -22,6 +22,11 @@ def get_connection():
 #------------------------
 
 
+
+#------------------------
+#   vector
+#------------------------
+
 DIMENSION = 768
 
 BASE_DIR = Path(__file__).resolve().parents[1]
@@ -40,7 +45,9 @@ else:
     base_index = faiss.IndexFlatL2(DIMENSION)
     index = faiss.IndexIDMap2(base_index)
 
-
+#------------------------
+#   vector
+#------------------------
 
 
 
@@ -231,6 +238,7 @@ def handle_vector(state):
     memories_list = memory_data.get("memories", [])
 
     for operation in memories_list:
+
         if operation.get("memory_type") != "episodic":
             continue
             
@@ -248,10 +256,11 @@ def handle_vector(state):
 
 
         if action == "create":
-            print(f"Creating episodic memory vector for query: {query}")
             operation["memory_id"]=create_vector(query, current_memory_id)
+
             print(f"Created episodic memory with ID: {operation['memory_id']}.")
-            current_memory_id += 1  # Increment the ID for the next creation
+            current_memory_id += 1                                          # Increment the ID for the next creation
+
         elif action == "update":
             id = retrive_vector(query=query)
             if id:
@@ -261,6 +270,7 @@ def handle_vector(state):
                 print(f"Updated episodic memory with ID: {operation['memory_id']}.")
             else:
                 print("No id found in episodic vt")
+
         elif action == "delete":
             id = retrive_vector(query=query)
             if id:
@@ -270,10 +280,14 @@ def handle_vector(state):
                 print(f"Deleted episodic memory with ID: {operation['memory_id']}.")
             else:
                 print("No id found in episodic vt")
-        elif action == "retrieve":
-            retrive_vector(query=query)
+
         else:
             print("error is in the action ot valid episodic vt")
+
+
+
+
+
 
     # Update the memory_data dict with the mutated list
     memory_data["memories"] = memories_list

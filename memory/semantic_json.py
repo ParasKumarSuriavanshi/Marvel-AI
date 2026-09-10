@@ -20,10 +20,10 @@ def save_metadata(metadata):
 
 
 
-def create(memory_id , data):
+def create(memory_id , user_id, data):
     metadata = load_metadata()
 
-    metadata[str(memory_id)] = {"memory_id":memory_id , **data}
+    metadata[str(memory_id)] = {"memory_id":memory_id ,"user_id":user_id, **data}
 
     save_metadata(metadata)
 
@@ -95,13 +95,17 @@ def handle_json(state):
         action = operation.get("action")
         data = operation.get("data", {})
         memory_id = operation.get("memory_id")
+        user_id = operation.get("user_id")
 
         if memory_id is None:
             print(f"Error: memory_id is required for action '{action}' but is missing in semantic json.")
             break
+        if user_id is None:
+            print(f"Error: user_id is required for action '{action}' but is missing in semantic json.")
+            break
 
         if action == "create":
-            create(memory_id=memory_id ,data= data)
+            create(memory_id=memory_id , user_id=user_id, data= data)
             print("semantic create success json")
         elif action == "delete":
             delete(memory_id)

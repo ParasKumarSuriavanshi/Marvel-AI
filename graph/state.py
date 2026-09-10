@@ -29,30 +29,6 @@ def reducer_memory_nodes(left :MemoryManagerOutput, right: MemoryManagerOutput) 
         "memories": merged_memories
     }
 
-# class MemoryNotes(TypedDict):
-#     memory_id: str
-#     user_id: str
-#     memory_type: Literal["working" , "Short-term" , "profile" , "episodic" , "semantic"]
-#     action: str
-#     data: dict[str, Any]
-#     confidence: float
-#     created_at: str
-#     updated_at: str
-
-
-
-
-class MarvelState(TypedDict):
-    user_id: str
-    messages: Annotated[list[AnyMessage], add_messages]
-    final_response: Optional[str]
-    memory_nodes: Annotated[MemoryManagerOutput, reducer_memory_nodes]
-
-
-
-
-
-from typing import TypedDict, Literal, Any
 
 
 class MemoryData(TypedDict, total=False):
@@ -113,5 +89,15 @@ class MemoryOperation(TypedDict):
 class MemoryManagerOutput(TypedDict):
     memory_required: bool
     memories: list[MemoryOperation]
+
+
+
+
+class MarvelState(TypedDict):
+    message_range:int
+    user_id: str
+    messages: Annotated[list[AnyMessage], add_messages]
+    final_response: Optional[str]
+    memory_nodes: MemoryManagerOutput #Annotated[MemoryManagerOutput, reducer_memory_nodes]
 
 

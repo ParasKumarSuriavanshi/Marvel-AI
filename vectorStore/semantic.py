@@ -197,23 +197,32 @@ def handle_semantic(state):
     current_id = generate_memory_id(load_metadata())
     memory_data = state.get("memory_nodes", {})
     memories_list = memory_data.get("memories", [])
+
+
+
     
     for operation in memories_list:
+
         if operation.get("memory_type") != "semantic":
             continue
             
         action = operation.get("action")
         data = operation.get("data", {})
+
+
         query = (
             f"subject: {data.get('subject', '')}. "
             f"predicate: {data.get('predicate', '')}. "
             f"object: {data.get('object', '')}. "
             f"content: {data.get('content', '')}.")
 
+
         if action == "create":
             operation["memory_id"] = create_add(query, current_id)
+
             print(f"Created semantic memory with ID: {operation['memory_id']}.")
-            current_id += 1  # Increment the ID for the next creation
+            current_id += 1                                          # Increment the ID for the next creation
+
         elif action == "update":
             id = retieve(query)
             if id:
@@ -223,8 +232,7 @@ def handle_semantic(state):
                 print(f"Updated semantic memory with ID: {operation['memory_id']}.")
             else:
                 print("No id found in semantic vt")
-        elif action == "retrieve":
-            search(query)
+
         elif action == "delete":
             id = retieve(query)
             if id:
@@ -234,8 +242,13 @@ def handle_semantic(state):
                 print(f"Deleted semantic memory with ID: {operation['memory_id']}.")
             else:
                 print("No id found in semantic vt")
+
         else:
             print(f"Unknown action: {action} for semantic memory operation vt.")
+
+
+
+
 
     # Update the memory_data dict with the mutated list
     memory_data["memories"] = memories_list

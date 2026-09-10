@@ -5,6 +5,7 @@ from pydantic import BaseModel
 class struct(BaseModel):
     user_id: str
 
+
 def user_id_extractor(state:MarvelState):
     """This function decide the user ID means which user is using the assistant and store it in the state."""
 
@@ -42,35 +43,34 @@ def user_id_extractor(state:MarvelState):
 
 
 
-    #======================
-    #       LLM Based
-    #======================
+    # #======================
+    # #       LLM Based
+    # #======================
 
 
-    prompt = f"""
-    Extract user_id information from the message.
+    # prompt = f"""
+    # Extract user_id information from the message.
 
-        Message:
-        {query}
+    #     Message:
+    #     {query}
 
-        Rules:
-        - If information is missing, return "paras".
-        - Never return "unknown" or null.
-        - Return only valid JSON.
-        - User ID will be in the form of a name. 
-        Example: 
-            user_id = "paras"
-            user_id = "jashan"
+    #     Rules:
+    #     - If information is missing, return "paras".
+    #     - Never return "unknown" or null.
+    #     - Return only valid JSON.
+    #     - User ID will be in the form of a name. 
+    #     Example: 
+    #         user_id = "paras"
+    #         user_id = "kashif"
 
-        Format:
-        {{
-            "user_id": "paras"
-        }}
-        """
+    #     Format:
+    #     {{
+    #         "user_id": "paras"
+    #     }}
+    #     """
 
-    llm_st = llm.with_structured_output(struct)
-    result = llm_st.invoke(prompt)
+    # llm_st = llm.with_structured_output(struct)
+    # result = llm_st.invoke(prompt)
 
-    state["user_id"] = result.user_id if result.user_id else "paras"
-
+    # state["user_id"] = result.user_id if result.user_id else "paras"
     return state

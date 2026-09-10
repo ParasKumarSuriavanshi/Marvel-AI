@@ -1,5 +1,6 @@
 from graph import state
 from graph.state import MemoryManagerOutput
+from graph.update_range import update_message_range_node
 from memory.checkpoint import memory
 
 from agent.user_id import user_id_extractor
@@ -9,9 +10,9 @@ from memory.semantic_json import handle_json
 from vectorStore.semantic import handle_semantic
 from memory.episodic import handle_episodic_memory
 from vectorStore.episodic_vt import handle_vector
-from graph.route import memory_router
+from graph.route import memory_router, main_router
 
-from langgraph.graph import END, StateGraph
+from langgraph.graph import END, START, StateGraph
 from langchain_core.messages import AIMessage, HumanMessage
 
 from memory.profile import get_profile
@@ -42,15 +43,20 @@ def answer(marvel_state: MarvelState):
     #print(result)
     return {"messages": [result]}
 
+
+
+
+
 def build():
     """create workflow graph for the Marvel AI system"""
 
     builder = StateGraph(MarvelState)
 
     builder.add_node("answer", answer)
-    builder.add_node("user", user_id_extractor)
-
+    #builder.add_node("user", user_id_extractor)
+    #builder.add_node("main_router", main_router)
     builder.add_node("user_id", user_id_extractor)
+    builder.add_node("update", update_message_range_node)
     builder.add_node("manager", manager)
     builder.add_node("profile", handle_profile_memory)
     builder.add_node("semantic", handle_semantic)
@@ -58,25 +64,33 @@ def build():
     builder.add_node("episodic", handle_episodic_memory)
     builder.add_node("episodic_vt", handle_vector)
 
-    builder.add_edge("user_id", "manager")
-    builder.add_conditional_edges(
-    "manager",memory_router,
-    {
-        "profile": "profile",
-        "semantic": "semantic",
-        "episodic_vt": "episodic_vt",
-        "short_term": "answer",
-        "end": "answer",
-    }
-    )
-    builder.add_edge("profile", "answer")
-    builder.add_edge("episodic_vt", "episodic")
-    builder.add_edge("episodic", "answer")
+    builder.add_conditional_edges(START, main_router,{"manager": "manager", "answer": "answer"})
+
+
+    #builder.add_edge("user_id", "manager")
+
+    # builder.add_conditional_edges(
+    # "manager",memory_router,
+    # {
+    #     "profile": "profile",
+    #     "semantic": "semantic",
+    #     "episodic_vt": "episodic_vt",
+    #     "short_term": "answer",
+    #     "end": "answer",
+    # }
+    # )
+
+    builder.add_edge("manager", "semantic")
     builder.add_edge("semantic", "semantic_json")
-    builder.add_edge("semantic_json", "answer")
+    builder.add_edge("semantic_json", "episodic_vt")
+    builder.add_edge("episodic_vt", "episodic")
+    builder.add_edge("episodic", "profile")
+    builder.add_edge("profile", "update")
+    builder.add_edge("update", END)
+
+
     
-    builder.set_entry_point("user_id")
-    
+    #builder.set_entry_point("main_router")
 
     #builder.set_entry_point("answer")
 

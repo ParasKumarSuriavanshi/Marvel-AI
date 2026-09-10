@@ -1,6 +1,5 @@
 from typing import Literal
-
-from graph.state import MemoryManagerOutput
+from langgraph.types import Command
 
 
 def memory_router(state):
@@ -11,12 +10,15 @@ def memory_router(state):
     memory_data = state.get("memory_nodes", {})
     memory_required = memory_data.get("memory_required", False)
 
+
     # If no memory is required, skip straight to the end/answer
     if not memory_required:
         return "end"
 
+
     # Use a set to avoid duplicate routes (e.g., if there are 2 profile memories)
     destinations = set()
+
 
     for operation in memory_data.get("memories", []):
         memory_type = operation.get("memory_type")
@@ -31,9 +33,25 @@ def memory_router(state):
         elif memory_type == "short_term":
             destinations.add("short_term")
 
+
     # If the loop finished but we found no valid destinations, go to end
     if not destinations:
         return "end"
 
+
     # Convert the set to a list so LangGraph can route to all of them in parallel!
     return list(destinations)
+
+
+
+def main_router(state) -> Literal["manager", "answer"]:
+    """
+    Decide whether to route to the memory manager or directly to the answer node.
+    Returns a single string for routing.
+    """
+
+    range = state.get("message_range", 0)
+    if len(state.get("messages")) - range >= 9:
+        return ["manager", "answer"]
+    else:
+        return "answer"
