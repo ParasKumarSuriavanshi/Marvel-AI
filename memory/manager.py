@@ -13,6 +13,21 @@ from memory.episodic import retrieve_episodic_memory
 from vectorStore.episodic_vt import retrive_vector
 from vectorStore.semantic import retieve
 from memory.semantic_json import searchjson
+import logging
+#==========Logger==============
+
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+formatter = logging.Formatter("%(asctime)s:%(name)s:%(filename)s:%(funcName)s:%(levelname)s:%(message)s")
+
+file_handler = logging.FileHandler("log_info.log")
+file_handler.setFormatter(formatter)
+
+logger.addHandler(file_handler)
+
+#==========Logger===============
 
 
 def manager(MARVEL_STATE):
@@ -27,17 +42,18 @@ def manager(MARVEL_STATE):
     # current_user_info = MARVEL_STATE["user_info"]
     # #relevant_existing_memories = MARVEL_STATE["memory_notes"]
 
-
+    logger.info("Successfully loaded memory manager file and func")
     range = MARVEL_STATE.get("message_range", 0)
+    logger.info(F"meassage starting range value is - {range}")
 
     human_msg = "\n".join(
     f"Human message {i}: {msg.content}" 
     for i, msg in enumerate(MARVEL_STATE["messages"][range:], start=1) 
     if msg.type == "human")
 
-    print("============conversation=============")
-    print(human_msg)
-    print("============conversation=============")
+    
+    logger.info(f"Human message - {human_msg}")
+    
 
     episodic_memory_info = "\n".join(
     f"Episodic memory info {i}: {retrieve_episodic_memory(date=None, user_id=MARVEL_STATE["user_id"] , vector_results=retrive_vector(msg.content))}"
@@ -457,9 +473,9 @@ def manager(MARVEL_STATE):
 
     structured_response = llm.with_structured_output(MemoryManagerOutput)
     response = structured_response.invoke(memory_manager_prompt)
-    print("============manager=============")
-    print(response)
-    print("============manager=============")
+    logger.info("============manager=============")
+    logger.debug(response)
+    logger.info("============manager=============")
 
 
     

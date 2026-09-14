@@ -1,9 +1,75 @@
 from langchain_core.messages import HumanMessage
+from graph.state import MarvelState
 from model.llm import llm
 from graph.workflow import build
-from agent.user_id import user_id_extractor
+import logging
+
+
+#==========Logger==============
+
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+formatter = logging.Formatter("%(asctime)s:%(name)s:%(filename)s:%(funcName)s:%(levelname)s:%(message)s")
+
+file_handler = logging.FileHandler("log_info.log")
+file_handler.setFormatter(formatter)
+
+logger.addHandler(file_handler)
+
+#==========Logger===============
 
 a = build()
+
+value = None
+
+def user_id(query):
+    global value
+    b= None
+    phareses = [
+        "create a new user" ,
+         "switch user to",
+         "switch to",
+         "switch workspace to",
+         "switch to a new user",
+         "use the user",
+         "shift to user",
+         "shift to",
+         "shift workspace to",
+         "shift to a new user"
+         ]
+    for i in phareses:
+        if i in query:
+            try:
+                senten = query.split(i)[1].strip()
+                user_id1 = senten.split(" ")[0].strip()
+                user_id2 = user_id1.split(",")[0].strip()
+                user_id = user_id2.split(".")[0].strip()
+                b = user_id
+                #state["user_id_changed"] = True
+                logger.debug(f"new user_id is taken as - {b}")
+            except:
+                logger.debug("No new user id given")
+                pass
+            break    
+
+    
+    if value is None:
+        if b is None:
+            value = "paras"
+        else:
+            value = b
+    else:
+        if b is not None:
+            value = b
+        else:
+            value = value
+
+    logger.debug(f"user_id to config_main is - {value}")
+    return value
+
+
 
 
 while True:
@@ -12,33 +78,18 @@ while True:
     if user_input.lower() in ["exit", "quit"]:
         break
 
-    # 1. Create the initial state payload with the user message
-    initial_state = {"messages": [HumanMessage(content=user_input)]}
-    
-    # 2. Call the extractor outside the graph to get the user_id injected into state
-    updated_state = user_id_extractor(initial_state)
-    print(updated_state)
-
-    user_id = updated_state.get("user_id", "paras")
     config = {
-        "configurable": {
-            "thread_id": f"{user_id}" 
+    "configurable": {
+        "thread_id": f"{user_id(user_input.lower())}"
         }
     }
-
-
-
+    
     result = a.invoke(
-        updated_state,
+        {
+            "messages": [HumanMessage(content=user_input)]
+        },
         config=config
     )
-
-    # result = a.invoke(
-    #     {
-    #         "messages": [HumanMessage(content=user_input)]
-    #     },
-    #     config=config
-    # )
     print(result.get("messages")[-1].content)
 
 
@@ -49,20 +100,5 @@ for message in result.get("messages", []):
     print(f"{message.type}: {message.content}\n")
     print("-" * 20) # Adds a separator line between messages
 
+logger.info("Successfully Exited code with Convo history display.")
 
-# config = {
-#     "configurable": {
-#         "thread_id": "paras" 
-#     }
-# }
-
-# current_state = a.get_state(config)
-
-# # The messages are stored in the 'values' attribute
-# history = current_state.values.get("messages", [])
-
-# # LangChain messages have a built-in pretty_print() method
-# for message in history:
-#     message.pretty_print()
-
-# print(len(history))  # This will print the number of messages in the history

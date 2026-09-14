@@ -1,48 +1,20 @@
 from typing import Literal
 from langgraph.types import Command
+import logging
+#==========Logger==============
 
 
-def memory_router(state):
-    """
-    Decide which memory node(s) should receive the memory-manager output.
-    Returns a single string or a list of strings for parallel routing.
-    """
-    memory_data = state.get("memory_nodes", {})
-    memory_required = memory_data.get("memory_required", False)
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
+formatter = logging.Formatter("%(asctime)s:%(name)s:%(filename)s:%(funcName)s:%(levelname)s:%(message)s")
 
-    # If no memory is required, skip straight to the end/answer
-    if not memory_required:
-        return "end"
+file_handler = logging.FileHandler("log_info.log")
+file_handler.setFormatter(formatter)
 
+logger.addHandler(file_handler)
 
-    # Use a set to avoid duplicate routes (e.g., if there are 2 profile memories)
-    destinations = set()
-
-
-    for operation in memory_data.get("memories", []):
-        memory_type = operation.get("memory_type")
-        #action = operation.get("action")
-        
-        if memory_type == "profile":
-            destinations.add("profile")
-        elif memory_type == "semantic":
-            destinations.add("semantic")
-        elif memory_type == "episodic":
-            destinations.add("episodic_vt")
-        elif memory_type == "short_term":
-            destinations.add("short_term")
-
-
-    # If the loop finished but we found no valid destinations, go to end
-    if not destinations:
-        return "end"
-
-
-    # Convert the set to a list so LangGraph can route to all of them in parallel!
-    return list(destinations)
-
-
+#==========Logger===============
 
 def main_router(state) -> Literal["manager", "answer"]:
     """
@@ -50,8 +22,14 @@ def main_router(state) -> Literal["manager", "answer"]:
     Returns a single string for routing.
     """
 
+    logger.info("conditional router func called successfully")
+    
     range = state.get("message_range", 0)
+
+    logger.debug(f"condition router starting range is - {range}")
     if len(state.get("messages")) - range >= 9:
+        logger.debug("condition router returns - 'manger' , 'answer'")
         return ["manager", "answer"]
     else:
+        logger.debug("condtional router return ONLY 'answer'")
         return "answer"

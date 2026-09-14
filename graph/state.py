@@ -3,7 +3,21 @@ from typing import Annotated, Optional, Any
 from typing_extensions import TypedDict
 from langgraph.graph.message import Literal, add_messages
 from langchain_core.messages import AnyMessage
+import logging
+#==========Logger==============
 
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+formatter = logging.Formatter("%(asctime)s:%(name)s:%(filename)s:%(funcName)s:%(levelname)s:%(message)s")
+
+file_handler = logging.FileHandler("log_info.log")
+file_handler.setFormatter(formatter)
+
+logger.addHandler(file_handler)
+
+#==========Logger===============
 
 def reducer_memory_nodes(left :MemoryManagerOutput, right: MemoryManagerOutput) -> "MemoryManagerOutput":
     """Reducer function to safely merge memory_nodes from parallel branches."""
@@ -29,7 +43,7 @@ def reducer_memory_nodes(left :MemoryManagerOutput, right: MemoryManagerOutput) 
         "memories": merged_memories
     }
 
-
+logger.debug("State file called")
 
 class MemoryData(TypedDict, total=False):
     # PROFILE
@@ -99,5 +113,6 @@ class MarvelState(TypedDict):
     messages: Annotated[list[AnyMessage], add_messages]
     final_response: Optional[str]
     memory_nodes: MemoryManagerOutput #Annotated[MemoryManagerOutput, reducer_memory_nodes]
+
 
 

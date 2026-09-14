@@ -1,8 +1,20 @@
 import sqlite3
 from pathlib import Path
-import uuid
+import logging
+#==========Logger==============
 
-from graph.state import MemoryManagerOutput
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+formatter = logging.Formatter("%(asctime)s:%(name)s:%(filename)s:%(funcName)s:%(levelname)s:%(message)s")
+
+file_handler = logging.FileHandler("log_info.log")
+file_handler.setFormatter(formatter)
+
+logger.addHandler(file_handler)
+
+#==========Logger===============
 BASE_DIR = Path(__file__).resolve().parent.parent
 DB_PATH = BASE_DIR / "database" / "sql" / "episodic.db"
 
@@ -37,6 +49,8 @@ def init_db():
 def create_episodic_memory(memory_id, user_id, event, date, context, summary, importance, confidence, source):
     conn = get_connection()
     cursor = conn.cursor()
+    logger.info("successfully called create episodic sql func")
+    logger.info("successfully connected to episodic sql")
 
 
     cursor.execute("""
@@ -46,16 +60,20 @@ def create_episodic_memory(memory_id, user_id, event, date, context, summary, im
 
     
     conn.commit()
+    logger.info("successfully commited to episodic sql")
     conn.close()
 
 
 def update_episodic_memory(memory_id, user_id, event, date, context, summary, importance, confidence, source , updated_at):
 
+    logger.info("successfully called update episodic sql func")
+
     if memory_id == None:
-        print("No memory id provided to the update episodic memeory sql")
+        logger.warning("No memory id provided to the update episodic memeory sql")
     
     conn = get_connection()
     cursor = conn.cursor()
+    logger.info("successfully connected to episodic sql")
 
     cursor.execute("""
         UPDATE episodic_memories
@@ -74,17 +92,21 @@ def update_episodic_memory(memory_id, user_id, event, date, context, summary, im
 
     conn.commit()
     updated = cursor.rowcount
+    logger.info("successfully commited to episodic sql")
     conn.close()
     return updated > 0  # Return True if a row was updated, False otherwise
 
 
 def delete_episodic_memory(memory_id, user_id):
 
+    logger.info("successfully called delete episodic sql func")
+
     if memory_id == None:
-        print("No memory id provided to the delete episodic memeory sql")
+        logger.warning("No memory id provided to the delete episodic memeory sql")
     
     conn = get_connection()
     cursor = conn.cursor()
+    logger.info("successfully connected to episodic sql")
 
     cursor.execute("""
         DELETE FROM episodic_memories
@@ -93,17 +115,22 @@ def delete_episodic_memory(memory_id, user_id):
 
     conn.commit()
     deleted = cursor.rowcount
+    logger.info("successfully commited to episodic sql")
     conn.close()
     return deleted > 0  # Return True if a row was deleted, False otherwise
 
 
 def retrieve_episodic_memory(date: str | None, user_id: str, vector_results):
 
+    logger.info("successfully called retrieve episodic sql func")
+
     if not vector_results:
+        logger.debug("no id to retrieve from in episodic sql")
         return []
     conn = get_connection()
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
+    logger.info("successfully connected to episodic sql")
     memories = []
     
     for j in vector_results:
@@ -127,11 +154,12 @@ def retrieve_episodic_memory(date: str | None, user_id: str, vector_results):
             """, (date, user_id, i))
         row = cursor.fetchone()
         if row:
+            logger.info("retrieve a row from episodic sql")
             memory_data = (dict(row))
             memory_data["faiss_distance"] = j["distance"]
             memories.append(memory_data)
     
-
+    logger.info(f"successfully retrieve from episodic sql - {memories}")
     conn.close()
 
     return memories
@@ -142,13 +170,14 @@ def retrieve_episodic_memory(date: str | None, user_id: str, vector_results):
 def handle_episodic_memory(state):
     """Handles all the CRUD operation for episodic memeory."""
 
-    #i=0
+    logger.info("successfully called episodic sql file")
     memory_data = state.get("memory_nodes", {})
 
 
     for operation in memory_data.get("memories", []):
 
         if operation.get("memory_type") != "episodic":
+            logger.info("operation not episodic type")
             continue
 
         action = operation.get("action")
@@ -161,28 +190,31 @@ def handle_episodic_memory(state):
 
 
         if memory_id is None:
-            print(f"Error: memory_id is required for action '{action}' but is missing in episodic sql.")
+            logger.warning(f"Error: memory_id is required for action '{action}' but is missing in episodic sql.")
             break
 
 
         if not user_id:
-            return {"status": "error", "message": "user_id is missing from state"}
+            logger.warning(f"No user_id for episodic sql in the state. user_id - {user_id}")
 
 
         if action == "create":
+            logger.info("action is create")
             create_episodic_memory(memory_id=memory_id, user_id=user_id, event=data.get("event"),date=data.get("date"), context=data.get("context"), summary=data.get("summary"), importance=importance, confidence=confidence, source=source)
-            print("episodic create success sql")
+            logger.info("episodic create success sql")
 
         elif action == "update":
+            logger.info("action is create")
             update_episodic_memory(memory_id=memory_id, user_id=user_id, event=data.get("event"),date=data.get("date"), context=data.get("context"), summary=data.get("summary"), importance=importance, confidence=confidence, source=source, updated_at=data.get("date"))
-            print("episodic update success sql")
+            logger.info("episodic update success sql")
 
         elif action == "delete":
+            logger.info("action is delete")
             delete_episodic_memory(memory_id=memory_id, user_id=user_id)
-            print("episodic delete success sql")
+            logger.info("episodic delete success sql")
                         
         else:
-            print("error in episodoic.py sql")
+            logger.warning(f"{action} is not valid action")
 #i=i+1
 
 

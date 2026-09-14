@@ -1,6 +1,6 @@
 from langgraph.checkpoint.sqlite import SqliteSaver
 from contextlib import ExitStack
-import atexit
+
 
 DB_PATH = "memory.db"
 

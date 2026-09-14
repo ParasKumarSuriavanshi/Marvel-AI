@@ -1,5 +1,3 @@
-from graph import state
-from graph.state import MemoryManagerOutput
 from graph.update_range import update_message_range_node
 from memory.checkpoint import memory
 
@@ -10,10 +8,9 @@ from memory.semantic_json import handle_json
 from vectorStore.semantic import handle_semantic
 from memory.episodic import handle_episodic_memory
 from vectorStore.episodic_vt import handle_vector
-from graph.route import memory_router, main_router
+from graph.route import main_router
 
 from langgraph.graph import END, START, StateGraph
-from langchain_core.messages import AIMessage, HumanMessage
 
 from memory.profile import get_profile
 from memory.episodic import retrieve_episodic_memory
@@ -23,10 +20,31 @@ from memory.semantic_json import searchjson
 from graph.state import MarvelState
 from model.llm import llm
 
+import logging
+#==========Logger==============
+
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+formatter = logging.Formatter("%(asctime)s:%(name)s:%(filename)s:%(funcName)s:%(levelname)s:%(message)s")
+
+file_handler = logging.FileHandler("log_info.log")
+file_handler.setFormatter(formatter)
+
+logger.addHandler(file_handler)
+
+#==========Logger===============
+
 
 def answer(marvel_state: MarvelState):
     """answer node for the Marvel AI system"""
+
+    logger.info(f"Final response from llm func called successfully (answer), user_id = {marvel_state['user_id']}")
+
     last_msg = marvel_state["messages"][-1].content.lower()
+
+
     prompt = f"""You are a AI system that answers questions about any thing. You are a helpful assistant. You are given the following user input: {last_msg}. 
     Please provide a detailed and informative response to the user's query.
     Here is the conversation history between the user and the AI system:{marvel_state["messages"]}. Please provide a response that is relevant to the user's query and takes into account the context of the conversation history.
@@ -38,9 +56,13 @@ def answer(marvel_state: MarvelState):
             {retrieve_episodic_memory(date=None, user_id=marvel_state["user_id"] , vector_results=retrive_vector(marvel_state["messages"][-1].content))}
     
          Semantic memory info related to lastest user message/query:
-            {searchjson(retieve(marvel_state["messages"][-1].content))}"""
+            {searchjson(retieve(marvel_state["messages"][-1].content))}
+    """
+
     result = llm.invoke(prompt)
-    #print(result)
+
+    logger.info("LLM successfully created the final result.")
+    
     return {"messages": [result]}
 
 
@@ -49,8 +71,9 @@ def answer(marvel_state: MarvelState):
 
 def build():
     """create workflow graph for the Marvel AI system"""
-
+    logger.info("Graph build frnc called successfully")
     builder = StateGraph(MarvelState)
+
 
     builder.add_node("answer", answer)
     #builder.add_node("user", user_id_extractor)
@@ -64,7 +87,7 @@ def build():
     builder.add_node("episodic", handle_episodic_memory)
     builder.add_node("episodic_vt", handle_vector)
 
-    builder.add_conditional_edges(START, main_router,{"manager": "manager", "answer": "answer"})
+    builder.add_conditional_edges("user_id", main_router,{"manager": "manager", "answer": "answer"})
 
 
     #builder.add_edge("user_id", "manager")
@@ -90,7 +113,7 @@ def build():
 
 
     
-    #builder.set_entry_point("main_router")
+    builder.set_entry_point("user_id")
 
     #builder.set_entry_point("answer")
 
