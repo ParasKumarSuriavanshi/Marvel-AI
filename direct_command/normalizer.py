@@ -1,5 +1,4 @@
 import re
-import nltk
 from nltk.tokenize import word_tokenize, RegexpTokenizer
 from nltk.corpus import stopwords
 # nltk.download('punkt_tab')
@@ -20,9 +19,8 @@ def normalizer(state):
     fil_token = []
     custom_words = ['hey' , 'marvel']
     
-    pattern = "volume [\\w|\\d]+|open [\\w]+|launch [\\w]+"
-    #text = state["messages"][-1].content
-    text = state
+    #pattern = "volume [\\w|\\d]+|open [\\w]+|launch [\\w]+"
+    text = state["messages"][-1].content
     if not text:
         return {"direct_command":{"normalize_input":""}}
 
@@ -30,7 +28,8 @@ def normalizer(state):
     text = text.lower()
     text = text.strip(" \t\n\r.,!?;:")
     text = re.sub(r"\s+", " ", text)
-
+    text = re.sub(r'(?i)^hey marvel,\s*', '', text)
+    
     token = tokeni.tokenize(text)
     sw = stopwords.words('english')
     sw.extend(custom_words)
@@ -38,10 +37,13 @@ def normalizer(state):
     for word in token:
         if word not in sw:
             fil_token.append(word)
-    print(fil_token)
+    logger.debug(f"filter_token are - {fil_token}")
+    return {"direct_command":{"normalize_input":text,"tokenized":fil_token}}
 
-    #return {"direct_command":{"normalize_input":text}}
-normalizer("hey marvel. OPen    chrome and search netflix in it.")
+#     return {"direct_command":{"normalize_input":text}}
+# normalizer("hey marvel.open netflix and play mentalist")
+# normalizer("hey marvel, hi i am paras could you search piano lesson on youtube")
+# normalizer("hey marvel, hi i am paras could you search what is the defination of hippo")
 
 
 

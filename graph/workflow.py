@@ -20,6 +20,9 @@ from memory.semantic_json import searchjson
 from graph.state import MarvelState
 from model.llm import llm
 
+from direct_command.normalizer import normalizer
+from direct_command.command_parser import command_parser
+
 
 import logging
 #==========Logger==============
@@ -58,8 +61,11 @@ def answer(marvel_state: MarvelState):
     return {"messages": [result]}
 
 
-
-
+def a(state):
+    logger.info("a")
+    print("sdb")
+    print(state.get("direct_command"))
+    print("sjdg")
 
 def build():
     """create workflow graph for the Marvel AI system"""
@@ -97,14 +103,18 @@ def build():
 
 
     builder.add_conditional_edges("empty_node", main_router,{"manager": "manager", "answer": "answer"})
-    builder.add_conditional_edges("direct_command_router",direct_command_router,{"direct":"", "not_direct":"empty_node"})
+    builder.add_conditional_edges("user_id",direct_command_router,{"direct":"normalizer", "not_direct":"empty_node"})
 
 
     #--------------Direct Command------------
 
-    builder.add_node("direct_command_router", direct_command_router)
+    builder.add_node("normalizer", normalizer)
+    builder.add_node("command_parser",command_parser)
+    builder.add_node("a",a)
 
-    builder.add_edge("user_id", "direct_command_router")
+    builder.add_edge("normalizer", "command_parser")
+    builder.add_edge("command_parser", "a")
+    builder.add_edge("a",END)
 
     #--------------Direct Command------------
 

@@ -104,8 +104,15 @@ class MemoryManagerOutput(TypedDict):
 
 #===========Direct Commands============
 
+class Parsed_command(TypedDict):
+    command: str
+    arguments: dict[str , Any]
 
-#class Direct_commands(TypedDict):
+class Direct_commands(TypedDict):
+    normalize_input:str
+    tokenized: list[str]
+    commands:list[Parsed_command]
+    unmatched_commands: list[str]
     
 
 #===========Direct Commands============
@@ -118,7 +125,7 @@ class MarvelState(TypedDict):
     messages: Annotated[list[AnyMessage], add_messages]
     final_response: Optional[str]
     memory_nodes: MemoryManagerOutput #Annotated[MemoryManagerOutput, reducer_memory_nodes]
-    #direct_command: Direct_commands
+    direct_command: Direct_commands
 
 
 
