@@ -8,7 +8,7 @@ from memory.semantic_json import handle_json
 from vectorStore.semantic import handle_semantic
 from memory.episodic import handle_episodic_memory
 from vectorStore.episodic_vt import handle_vector
-from graph.route import main_router
+from graph.route import main_router, empty_node, direct_command_router
 
 from langgraph.graph import END, START, StateGraph
 
@@ -20,19 +20,11 @@ from memory.semantic_json import searchjson
 from graph.state import MarvelState
 from model.llm import llm
 
+
 import logging
 #==========Logger==============
 
-
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-
-formatter = logging.Formatter("%(asctime)s:%(name)s:%(filename)s:%(funcName)s:%(levelname)s:%(message)s")
-
-file_handler = logging.FileHandler("log_info.log")
-file_handler.setFormatter(formatter)
-
-logger.addHandler(file_handler)
 
 #==========Logger===============
 
@@ -76,8 +68,13 @@ def build():
 
 
     builder.add_node("answer", answer)
+    builder.add_node("empty_node", empty_node)
     #builder.add_node("user", user_id_extractor)
     #builder.add_node("main_router", main_router)
+
+
+    #------------Memory---------------------
+
     builder.add_node("user_id", user_id_extractor)
     builder.add_node("update", update_message_range_node)
     builder.add_node("manager", manager)
@@ -87,7 +84,30 @@ def build():
     builder.add_node("episodic", handle_episodic_memory)
     builder.add_node("episodic_vt", handle_vector)
 
-    builder.add_conditional_edges("user_id", main_router,{"manager": "manager", "answer": "answer"})
+    builder.add_edge("manager", "semantic")
+    builder.add_edge("semantic", "semantic_json")
+    builder.add_edge("semantic_json", "episodic_vt")
+    builder.add_edge("episodic_vt", "episodic")
+    builder.add_edge("episodic", "profile")
+    builder.add_edge("profile", "update")
+    builder.add_edge("update", END)
+
+
+    #------------Memory---------------------
+
+
+    builder.add_conditional_edges("empty_node", main_router,{"manager": "manager", "answer": "answer"})
+    builder.add_conditional_edges("direct_command_router",direct_command_router,{"direct":"", "not_direct":"empty_node"})
+
+
+    #--------------Direct Command------------
+
+    builder.add_node("direct_command_router", direct_command_router)
+
+    builder.add_edge("user_id", "direct_command_router")
+
+    #--------------Direct Command------------
+
 
 
     #builder.add_edge("user_id", "manager")
@@ -103,20 +123,14 @@ def build():
     # }
     # )
 
-    builder.add_edge("manager", "semantic")
-    builder.add_edge("semantic", "semantic_json")
-    builder.add_edge("semantic_json", "episodic_vt")
-    builder.add_edge("episodic_vt", "episodic")
-    builder.add_edge("episodic", "profile")
-    builder.add_edge("profile", "update")
-    builder.add_edge("update", END)
 
 
     
-    builder.set_entry_point("user_id")
+
 
     #builder.set_entry_point("answer")
 
     builder.add_edge("answer" , END)
+    builder.set_entry_point("user_id")
 
     return builder.compile(checkpointer=memory)

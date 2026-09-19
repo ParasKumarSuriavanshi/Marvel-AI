@@ -1,18 +1,9 @@
 from typing import Literal
-from langgraph.types import Command
+import re
 import logging
 #==========Logger==============
 
-
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-
-formatter = logging.Formatter("%(asctime)s:%(name)s:%(filename)s:%(funcName)s:%(levelname)s:%(message)s")
-
-file_handler = logging.FileHandler("log_info.log")
-file_handler.setFormatter(formatter)
-
-logger.addHandler(file_handler)
 
 #==========Logger===============
 
@@ -31,5 +22,69 @@ def main_router(state) -> Literal["manager", "answer"]:
         logger.debug("condition router returns - 'manger' , 'answer'")
         return ["manager", "answer"]
     else:
-        logger.debug("condtional router return ONLY 'answer'")
+        logger.debug("cond`tional router return ONLY 'answer'")
         return "answer"
+
+
+
+
+def direct_command_router(state):
+    """normalize text for easy detection of direct command."""
+    logger.info("successfully called direct command router")
+
+    pattern = "volume [\\w|\\d]+|open [\\w]+|launch [\\w]+"
+    text = state["messages"][-1].content
+    if not text:
+        return "not_direct"
+
+    ACTION_WORDS = {
+    "open",
+    "launch",
+    "start",
+    "close",
+    "stop",
+    "increase",
+    "decrease",
+    "set",
+    "turn",
+    "play",
+    "pause",
+    "search",
+    "volume"}
+
+    NON_COMMAND_PATTERNS = [
+        "how do i",
+        "how to",
+        "explain",
+        "what is",
+        "what does",
+        "why does",
+        "how",
+
+        "tell me how"]
+
+
+    if "serch" not in text:
+        for i in NON_COMMAND_PATTERNS:
+            if i in text:
+                logger.debug(f"direct commant router response - NOT DIRECT")
+                return "not_direct"
+    else:
+        logger.debug(f"direct commant router response - DIRECT")
+        return "direct"
+    
+    for i in ACTION_WORDS:
+        if i in text:
+            logger.debug(f"direct commant router response - DIRECT")
+            return "direct"
+    logger.debug(f"direct commant router response - NOT DIRECT")
+    return "not_direct"
+    
+
+
+
+
+
+def empty_node(state):
+    logger.info("Successfully called empty node")
+    return state

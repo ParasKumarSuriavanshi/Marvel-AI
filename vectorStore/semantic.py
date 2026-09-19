@@ -7,16 +7,7 @@ from graph.state import MemoryManagerOutput
 import logging
 #==========Logger==============
 
-
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-
-formatter = logging.Formatter("%(asctime)s:%(name)s:%(filename)s:%(funcName)s:%(levelname)s:%(message)s")
-
-file_handler = logging.FileHandler("log_info.log")
-file_handler.setFormatter(formatter)
-
-logger.addHandler(file_handler)
 
 #==========Logger===============
 
@@ -34,7 +25,7 @@ if INDEX_PATH.exists():
     index = faiss.read_index(str(INDEX_PATH))
     logger.info(f"index for semantic vector file - {index}")
 else:
-    logger.warning("episodic vector file doesn't exist")
+    logger.warning("sematic vector file doesn't exist")
     base_index = faiss.IndexFlatL2(DIMENSION)
     index = faiss.IndexIDMap2(base_index)
     logger.info(f"created index for semantic vector file - {index}")

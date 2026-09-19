@@ -6,17 +6,21 @@ import logging
 
 
 #==========Logger==============
+def setup_global_logger():
+    # Get the ROOT logger
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
 
+    formatter = logging.Formatter("%(asctime)s:%(name)s:%(filename)s:%(funcName)s:%(levelname)s:%(message)s")
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+    file_handler = logging.FileHandler("log_info.log")
+    file_handler.setFormatter(formatter)
 
-formatter = logging.Formatter("%(asctime)s:%(name)s:%(filename)s:%(funcName)s:%(levelname)s:%(message)s")
-
-file_handler = logging.FileHandler("log_info.log")
-file_handler.setFormatter(formatter)
-
-logger.addHandler(file_handler)
+    # Add the handler only if it doesn't already have one (prevents duplicates)
+    if not logger.handlers:
+        logger.addHandler(file_handler)
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 #==========Logger===============
 
@@ -70,7 +74,8 @@ def user_id(query):
     return value
 
 
-
+setup_global_logger()
+logger = logging.getLogger(__name__)
 
 while True:
     user_input = input("User1: ")
@@ -78,6 +83,7 @@ while True:
     if user_input.lower() in ["exit", "quit"]:
         break
 
+    
     config = {
     "configurable": {
         "thread_id": f"{user_id(user_input.lower())}"
