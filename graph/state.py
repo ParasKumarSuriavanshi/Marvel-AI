@@ -113,6 +113,7 @@ class Direct_commands(TypedDict):
     tokenized: list[str]
     commands:list[Parsed_command]
     unmatched_commands: list[str]
+    success: bool
     
 
 #===========Direct Commands============

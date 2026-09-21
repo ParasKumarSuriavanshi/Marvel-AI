@@ -1,4 +1,4 @@
-from direct_command.rules import RULES
+from direct_command.command_info.rules import RULES
 import logging
 #==========Logger==============
 
@@ -23,6 +23,7 @@ def matcher(object1):
             for token,expected in zip(object1, pattern):
                 if place_holder(expected):
                     arguments[expected[1:-1]] = token
+                    break
                 else:
                     if token != expected:
                         matched = False
@@ -65,10 +66,13 @@ def command_parser(state):
         ]
 
     split = []
-    for i in range(len(token)):
-        if token[i] in ACTION_WORDS:
-            split.append(i)
-            i = i + 1
+    o = 0
+    while o < len(token):
+        if token[o] in ACTION_WORDS:
+            split.append(o)
+            o += 1
+        o+= 1  
+
 
     separated_commands = []
 

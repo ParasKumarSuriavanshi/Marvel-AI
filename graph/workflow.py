@@ -8,7 +8,7 @@ from memory.semantic_json import handle_json
 from vectorStore.semantic import handle_semantic
 from memory.episodic import handle_episodic_memory
 from vectorStore.episodic_vt import handle_vector
-from graph.route import main_router, empty_node, direct_command_router
+from graph.route import main_router, empty_node, direct_command_router, command_router
 
 from langgraph.graph import END, START, StateGraph
 
@@ -22,6 +22,7 @@ from model.llm import llm
 
 from direct_command.normalizer import normalizer
 from direct_command.command_parser import command_parser
+from direct_command.single_command import single_command
 
 
 import logging
@@ -104,16 +105,19 @@ def build():
 
     builder.add_conditional_edges("empty_node", main_router,{"manager": "manager", "answer": "answer"})
     builder.add_conditional_edges("user_id",direct_command_router,{"direct":"normalizer", "not_direct":"empty_node"})
+    builder.add_conditional_edges("command_parser", command_router, {"workflow":"single_command", "single":"single_command", "llm":"empty_node"})
 
 
     #--------------Direct Command------------
 
     builder.add_node("normalizer", normalizer)
     builder.add_node("command_parser",command_parser)
+    builder.add_node("single_command", single_command)
     builder.add_node("a",a)
 
     builder.add_edge("normalizer", "command_parser")
-    builder.add_edge("command_parser", "a")
+    builder.add_edge("single_command", "a")
+
     builder.add_edge("a",END)
 
     #--------------Direct Command------------

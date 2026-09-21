@@ -31,11 +31,38 @@ def normalizer(state):
     text = re.sub(r'(?i)^hey marvel,\s*', '', text)
     
     token = tokeni.tokenize(text)
-    sw = stopwords.words('english')
-    sw.extend(custom_words)
+
+    REMOVE_WORDS = [
+    "a", "an", "the",
+    "am", "is", "are", "was", "were", "be", "been", "being",
+    "have", "has", "had", "having",
+    "do", "does", "did",       # only remove if you're sure they're not intent-bearing
+    "of", "at", "by",
+    "for",
+    "about",
+    "as",
+    "because",
+    "again",
+    "against",
+    "each",
+    "further",
+    "here", "there",
+    "it", "its",
+    "me", "him", "her", "them",
+    "myself", "yourself", "himself", "herself",
+    "ourselves", "themselves",
+    "very",
+    "just"]
+    # sw = stopwords.words('english')
+    # sw.extend(custom_words)
         
-    for word in token:
-        if word not in sw:
+    for i,word in enumerate(token):
+        if word == "search":
+            fil_token.append(word)
+            a = " ".join(token[i + 1 :])
+            fil_token.append(a)
+            break
+        elif word not in REMOVE_WORDS:
             fil_token.append(word)
     logger.debug(f"filter_token are - {fil_token}")
     return {"direct_command":{"normalize_input":text,"tokenized":fil_token}}

@@ -64,7 +64,7 @@ def direct_command_router(state):
         "tell me how"]
 
 
-    if "serch" not in text:
+    if "search" not in text:
         for i in NON_COMMAND_PATTERNS:
             if i in text:
                 logger.debug(f"direct commant router response - NOT DIRECT")
@@ -81,6 +81,23 @@ def direct_command_router(state):
     return "not_direct"
     
 
+
+def command_router(state):
+    """This decide wether the task is single ec=xecution, workflow or need llm to complete"""
+
+    logger.info("Successfully called the command_router funct")
+
+    direct = state.get("direct_command")
+    command = direct.get("commands")
+    if len(command) > 1:
+        logger.debug("commad_router respose is - WORKFLOW")
+        return "workflow"
+    elif len(command) == 1:
+        logger.debug("commad_router respose is - SIGNLE")
+        return "single"
+    else:
+        logger.debug("commad_router respose is - LLM")
+        return "llm"
 
 
 

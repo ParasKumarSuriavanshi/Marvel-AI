@@ -5,6 +5,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 #==========Logger===============
-llm = ChatOllama(model = "qwen3:8b" ,  temperature = 0)
+llm = ChatOllama(model = "qwen3:8b" , temperature = 0)
 logger.info("llm load")
 
