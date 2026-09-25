@@ -1,6 +1,11 @@
+from urllib.parse import urlparse
 from direct_command.command_info.application import APPLICATIONS
+from web.brower_controller import web_search
 import subprocess
+from pynput.keyboard import Key, Controller
+import time
 import logging
+from playwright.sync_api import sync_playwright
 #==========Logger==============
 
 logger = logging.getLogger(__name__)
@@ -9,6 +14,31 @@ logger = logging.getLogger(__name__)
 
 
 
+def is_valid_url(url: str) -> bool:
+    try:
+        result = urlparse(url)
+        # A valid URL must have a scheme (http/https) and a domain (netloc)
+        return True#all([result.scheme, result.netloc])
+    except ValueError:
+        return False
+
+
+def close_tab(url):
+    """It search for the the url and closes that particular tab"""
+
+    playwright = sync_playwright().start()
+
+    browser =playwright.chromium.connect_over_cdp("http://localhost:9222")
+
+    context = browser.contexts[0]
+
+    for p in context.pages:
+        if url in p.url :
+            page = p
+            break
+
+    page.close()
+    playwright.stop()
 
 
 
@@ -21,9 +51,15 @@ def open_application(application):
         logger.error(f"No such application found in registry to open - {application}")
         return {"success": False, "error": "No such application found in the registry"}
 
-    subprocess.Popen(app,stdout=subprocess.DEVNULL, 
-        stderr=subprocess.DEVNULL)
-    logger.info(f"Successfully opened {application}")
+    if is_valid_url(app):
+        #subprocess.run(['hyprctl', 'dispatch', 'workspace', 'empty'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.Popen(["chromium", app], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+        logger.info(f"Successfully opened {application}")
+    else:
+        subprocess.Popen(app,stdout=subprocess.DEVNULL, 
+            stderr=subprocess.DEVNULL)
+        logger.info(f"Successfully opened {application}")
     return{"success": True, "error": ""}
 
 
@@ -36,10 +72,20 @@ def close_application(application):
         logger.error(f"No such application found in registry to close- {application}")
         return {"success": False, "error": "No such application found in the registry"}
 
-    subprocess.call(["pkill", "-f", app],stdout=subprocess.DEVNULL, 
-        stderr=subprocess.DEVNULL)
+    if is_valid_url(app):
+        keyboard = Controller()
+        close_tab(app)
 
-    logger.info(f"Successfully closed {application}")
+        # # 1. Ensure Chromium is the focused window in Hyprland
+        # subprocess.run(["hyprctl", "dispatch", "focuswindow", "class:chromium"],stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        # time.sleep(0.1) # Small buffer for focus swap
+        # subprocess.run(['wtype', '-M', 'ctrl', 'w'])
+
+    else:
+        subprocess.call(["pkill", "-f", app],stdout=subprocess.DEVNULL, 
+            stderr=subprocess.DEVNULL)
+
+        logger.info(f"Successfully closed {application}")
     return{"success": True, "error": ""}
 
 
@@ -92,6 +138,55 @@ def decrease_volume(level):
 
 
 
+def set_brightness(level):
+    """It set the brightness which is specified."""
+    logger.info("Successfully called set_brightness.")
+
+    brightness = (max(5,min(100,int(level))))
+    command = ["brightnessctl","-q", "set", f"{brightness}%"]
+
+    subprocess.run(command,stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    logger.info(f"Successfully set the bightness to level - {level}")
+    return{"success": True, "error": ""} 
+
+def increase_brightness(level):
+    """It increase the brightness by level which is specified."""
+    logger.info("Successfully called increase_brightness.")
+
+    brightness = (max(5,min(100,int(level))))
+    command = ["brightnessctl","-q", "set", f"+{brightness}%"]
+
+    subprocess.run(command,stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    logger.info(f"Successfully increased the brightness by level - {level}")
+    return{"success": True, "error": ""}
+
+def decrease_brightness(level):
+    """It decrease the brightness by level which is specified."""
+    logger.info("Successfully called decrease_brightness.")
+
+    brightness = (max(5,min(100,int(level))))
+    command = ["brightnessctl","-q", "set", f"{brightness}%-"]
+
+    subprocess.run(command,stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    logger.info(f"Successfully decreased the brightness by level - {level}")
+    return{"success": True, "error": ""}
+
+
+
+
+
+
+
+    
+
+
+
+
+
+
 
 
 COMMAND_EXECUTOR = {
@@ -100,8 +195,8 @@ COMMAND_EXECUTOR = {
     "SET_VOLUME":set_volume,
     "DECREASE_VOLUME":decrease_volume,
     "INCREASE_VOLUME":increase_volume,
-    # "SET_BRIGHTNESS":set_brightness,
-    # "DECREASE_BRIGHTNESS":decrease_brightness,
-    # "INCREASE_BRIGHTNESS":increase_brightness,
-    # "WEB_SEARCH":web_search
+    "SET_BRIGHTNESS":set_brightness,
+    "DECREASE_BRIGHTNESS":decrease_brightness,
+    "INCREASE_BRIGHTNESS":increase_brightness,
+    "WEB_SEARCH":web_search
 }

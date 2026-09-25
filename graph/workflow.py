@@ -1,3 +1,5 @@
+from langchain_core.messages import AIMessage
+
 from graph.update_range import update_message_range_node
 from memory.checkpoint import memory
 
@@ -22,7 +24,7 @@ from model.llm import llm
 
 from direct_command.normalizer import normalizer
 from direct_command.command_parser import command_parser
-from direct_command.single_command import single_command
+from direct_command.workflow_command import workflow_command
 
 
 import logging
@@ -64,9 +66,44 @@ def answer(marvel_state: MarvelState):
 
 def a(state):
     logger.info("a")
-    print("sdb")
+
+
+    direct = state.get("direct_command")
+    commands = direct.get("commands")
+    print("")
+    print("==========state============")
     print(state.get("direct_command"))
-    print("sjdg")
+    print("==========state============")
+
+   
+
+    prompt=""
+    for i in commands:
+        if i.get("command") =="WEB_SEARCH":
+            arguments = i.get("arguments")
+            query = arguments.get("query")
+            prompt = f"""User asked a query using web search, so your resposibility is to answer the query using the web data provided to you from the internet.
+                        USER QUERY:
+                            {query}
+                        WEB DATA:
+                            {direct.get("web_data")}
+
+                        make sure to keep answer short to medium length ad concise."""
+        else:
+            message="Command executed"
+
+    if prompt:
+        result = llm.invoke(prompt)
+        
+        logger.info("LLM successfully created the final result for web search.")
+            
+        return {"messages": [result]}
+    else:
+        manual_ai_result = AIMessage(content=message)
+        return {"messages": [manual_ai_result]}
+
+            
+
 
 def build():
     """create workflow graph for the Marvel AI system"""
@@ -105,18 +142,18 @@ def build():
 
     builder.add_conditional_edges("empty_node", main_router,{"manager": "manager", "answer": "answer"})
     builder.add_conditional_edges("user_id",direct_command_router,{"direct":"normalizer", "not_direct":"empty_node"})
-    builder.add_conditional_edges("command_parser", command_router, {"workflow":"single_command", "single":"single_command", "llm":"empty_node"})
+    builder.add_conditional_edges("command_parser", command_router, {"workflow":"workflow_command", "llm":"empty_node"})
 
 
     #--------------Direct Command------------
 
     builder.add_node("normalizer", normalizer)
     builder.add_node("command_parser",command_parser)
-    builder.add_node("single_command", single_command)
+    builder.add_node("workflow_command", workflow_command)
     builder.add_node("a",a)
 
     builder.add_edge("normalizer", "command_parser")
-    builder.add_edge("single_command", "a")
+    builder.add_edge("workflow_command", "a")
 
     builder.add_edge("a",END)
 

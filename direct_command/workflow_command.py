@@ -1,4 +1,6 @@
 from direct_command.command_executor import COMMAND_EXECUTOR
+import asyncio
+import inspect
 import logging
 #==========Logger==============
 
@@ -9,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 
-def single_command(state):
+def workflow_command(state):
     """It execute the command, like one at a time"""
 
     direct = state.get("direct_command")
@@ -24,7 +26,7 @@ def single_command(state):
 
         if executor is None:
             direct["success"] = False
-            direct["error"] = "No exector found"
+            direct["error"] = "No executor found"
             logger.error("No executor found for single command execution")
             return{"direct_command":direct}
         print(arguments)
@@ -35,8 +37,15 @@ def single_command(state):
             return{"direct_command":direct}
 
         logger.debug(f"command to execute is {command},{arguments}")
-
-        value = executor(**arguments)
+        if inspect.iscoroutinefunction(executor):
+            value = asyncio.run(executor(**arguments))
+        else:
+            value = executor(**arguments)
+        #value = executor(**arguments)
         direct["success"] = value.get("success")
         direct["error"] = value.get("error")
-        return {"direct_command":direct}
+        direct["web_data"] = value.get("vector_data", "No data found")
+        if value.get("success") is False:
+            logger.debug(f"Error after calling {executor}")
+            break
+    return {"direct_command":direct}

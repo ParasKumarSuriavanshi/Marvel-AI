@@ -89,12 +89,9 @@ def command_router(state):
 
     direct = state.get("direct_command")
     command = direct.get("commands")
-    if len(command) > 1:
+    if len(command) >= 1:
         logger.debug("commad_router respose is - WORKFLOW")
         return "workflow"
-    elif len(command) == 1:
-        logger.debug("commad_router respose is - SIGNLE")
-        return "single"
     else:
         logger.debug("commad_router respose is - LLM")
         return "llm"
