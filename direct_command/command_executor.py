@@ -18,27 +18,71 @@ def is_valid_url(url: str) -> bool:
     try:
         result = urlparse(url)
         # A valid URL must have a scheme (http/https) and a domain (netloc)
-        return True#all([result.scheme, result.netloc])
+        return all([result.scheme, result.netloc])
     except ValueError:
         return False
 
 
 def close_tab(url):
     """It search for the the url and closes that particular tab"""
+    logger.info("called close_tab")
 
     playwright = sync_playwright().start()
+    try:
+        browser =playwright.chromium.connect_over_cdp("http://localhost:9222")
 
+        context = browser.contexts[0]
+
+        for p in context.pages:
+            if url in p.url :
+                page = p
+                break
+
+        page.close()
+    except:
+        logger.warning("Didnt found tab to close")
+    playwright.stop()
+
+
+def open_tab(query):
+    """It open a tab"""
+    logger.info("called open_tab")
+    playwright = sync_playwright().start()
+    result = subprocess.run(['pgrep', '-i', 'chromium'], capture_output=True)
+    running = (result.returncode == 0)
+
+
+    if not running:
+        logger.debug("New chrome window is opened")
+        subprocess.run(['hyprctl', 'dispatch', 'workspace', 'empty'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.Popen("chromium",stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        time.sleep(2) 
     browser =playwright.chromium.connect_over_cdp("http://localhost:9222")
 
     context = browser.contexts[0]
 
+    page = None
+    context = browser.contexts[0]
+    exist = False
     for p in context.pages:
-        if url in p.url :
+        if query in p.url :
+            page = p
+            exist = True
+            page.bring_to_front()
+            subprocess.run(["hyprctl", "dispatch", "focuswindow", "class:chromium"],stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            break
+        elif "about:blank" in p.url or 'chrome://new-tab-page/' in p.url or "chrome-extension://hipekcciheckooncpjeljhnekcoolahp/index.html" in p.url:
             page = p
             break
+    if not exist:
+        if not page:
+            page = context.new_page()
+        page.goto(query, wait_until='load')
+        subprocess.run(["hyprctl", "dispatch", "focuswindow", "class:chromium"],stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    
 
-    page.close()
     playwright.stop()
+
 
 
 
@@ -52,8 +96,7 @@ def open_application(application):
         return {"success": False, "error": "No such application found in the registry"}
 
     if is_valid_url(app):
-        #subprocess.run(['hyprctl', 'dispatch', 'workspace', 'empty'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        subprocess.Popen(["chromium", app], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        open_tab(app)
 
         logger.info(f"Successfully opened {application}")
     else:

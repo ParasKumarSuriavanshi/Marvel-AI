@@ -10,22 +10,17 @@ from memory.semantic_json import handle_json
 from vectorStore.semantic import handle_semantic
 from memory.episodic import handle_episodic_memory
 from vectorStore.episodic_vt import handle_vector
-from graph.route import main_router, empty_node, direct_command_router, command_router
+from graph.route import main_router, empty_node, direct_command_router, command_router,reset_loop_state_node, llm_needed_or_not, simple_respose
 
 from langgraph.graph import END, START, StateGraph
 
-from memory.profile import get_profile
-from memory.episodic import retrieve_episodic_memory
-from vectorStore.episodic_vt import retrive_vector
-from vectorStore.semantic import retieve
-from memory.semantic_json import searchjson
+from agent.Marvel_AI import Marvel_ai
 from graph.state import MarvelState
 from model.llm import llm
 
 from direct_command.normalizer import normalizer
 from direct_command.command_parser import command_parser
 from direct_command.workflow_command import workflow_command
-
 
 import logging
 #==========Logger==============
@@ -34,34 +29,6 @@ logger = logging.getLogger(__name__)
 
 #==========Logger===============
 
-
-def answer(marvel_state: MarvelState):
-    """answer node for the Marvel AI system"""
-
-    logger.info(f"Final response from llm func called successfully (answer), user_id = {marvel_state['user_id']}")
-
-    last_msg = marvel_state["messages"][-1].content.lower()
-
-
-    prompt = f"""You are a AI system that answers questions about any thing. You are a helpful assistant. You are given the following user input: {last_msg}. 
-    Please provide a detailed and informative response to the user's query.
-    Here is the conversation history between the user and the AI system:{marvel_state["messages"]}. Please provide a response that is relevant to the user's query and takes into account the context of the conversation history.
-    Relevant existing memories for this user:
-        Profile info for this user:
-            {get_profile(user_id=marvel_state["user_id"])}
-            
-        Episodic memory info related to lastest user message/query:
-            {retrieve_episodic_memory(date=None, user_id=marvel_state["user_id"] , vector_results=retrive_vector(marvel_state["messages"][-1].content))}
-    
-         Semantic memory info related to lastest user message/query:
-            {searchjson(retieve(marvel_state["messages"][-1].content))}
-    """
-
-    result = llm.invoke(prompt)
-
-    logger.info("LLM successfully created the final result.")
-    
-    return {"messages": [result]}
 
 
 def a(state):
@@ -111,8 +78,10 @@ def build():
     builder = StateGraph(MarvelState)
 
 
-    builder.add_node("answer", answer)
+    builder.add_node("Marvel_ai", Marvel_ai)
     builder.add_node("empty_node", empty_node)
+    builder.add_node("direct_command_overwrite",reset_loop_state_node)
+    builder.add_node("simple_response",simple_respose)
     #builder.add_node("user", user_id_extractor)
     #builder.add_node("main_router", main_router)
 
@@ -140,9 +109,10 @@ def build():
     #------------Memory---------------------
 
 
-    builder.add_conditional_edges("empty_node", main_router,{"manager": "manager", "answer": "answer"})
+    builder.add_conditional_edges("empty_node", main_router,{"manager": "manager", "answer": "Marvel_ai"})
     builder.add_conditional_edges("user_id",direct_command_router,{"direct":"normalizer", "not_direct":"empty_node"})
     builder.add_conditional_edges("command_parser", command_router, {"workflow":"workflow_command", "llm":"empty_node"})
+    builder.add_conditional_edges("workflow_command",llm_needed_or_not, {"llm_needed":"Marvel_ai","not_needed":"simple_response"})
 
 
     #--------------Direct Command------------
@@ -150,38 +120,16 @@ def build():
     builder.add_node("normalizer", normalizer)
     builder.add_node("command_parser",command_parser)
     builder.add_node("workflow_command", workflow_command)
-    builder.add_node("a",a)
 
     builder.add_edge("normalizer", "command_parser")
-    builder.add_edge("workflow_command", "a")
-
-    builder.add_edge("a",END)
 
     #--------------Direct Command------------
 
+    builder.add_edge("Marvel_ai" , "direct_command_overwrite")
+    builder.add_edge("simple_response", "direct_command_overwrite")
+    builder.add_edge("direct_command_overwrite", END)
 
 
-    #builder.add_edge("user_id", "manager")
-
-    # builder.add_conditional_edges(
-    # "manager",memory_router,
-    # {
-    #     "profile": "profile",
-    #     "semantic": "semantic",
-    #     "episodic_vt": "episodic_vt",
-    #     "short_term": "answer",
-    #     "end": "answer",
-    # }
-    # )
-
-
-
-    
-
-
-    #builder.set_entry_point("answer")
-
-    builder.add_edge("answer" , END)
     builder.set_entry_point("user_id")
 
     return builder.compile(checkpointer=memory)

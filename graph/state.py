@@ -103,21 +103,7 @@ class MemoryManagerOutput(TypedDict):
 
 
 #===========Direct Commands============
-class Link:
-    text: str
-    url: str
 
-class ContentBlock:
-    type: str
-    text: str = ""
-    level: int | None = None
-class webpage(TypedDict):
-    title:str
-    block:list[ContentBlock]
-    links:list[Link]
-class web_search(TypedDict):
-    page:Any
-    webpage:webpage
 
 class Parsed_command(TypedDict):
     command: str

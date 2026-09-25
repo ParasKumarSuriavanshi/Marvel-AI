@@ -39,7 +39,7 @@ async def web_search(query):
         logger.debug("New chrome window is opened")
         subprocess.run(['hyprctl', 'dispatch', 'workspace', 'empty'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         subprocess.Popen("chromium",stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        time.sleep(4) 
+        time.sleep(2) 
     browser = await playwright.chromium.connect_over_cdp("http://localhost:9222")
 
     page = None

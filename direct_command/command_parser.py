@@ -68,7 +68,7 @@ def command_parser(state):
     split = []
     o = 0
     while o < len(token):
-        if token[o] in ACTION_WORDS:
+        if token[o] in ACTION_WORDS or token[o] =="and":
             split.append(o)
             o += 1
         o+= 1  
@@ -94,7 +94,7 @@ def command_parser(state):
             unmatch.append(i)
     
     logger.debug(f"commands passing to state are {commands}")
-    logger.debug(f"commands passing to state are {unmatch}")
+    logger.debug(f"commands Unmatched are {unmatch}")
     
     return {"direct_command":{
         "normalize_input": input1,

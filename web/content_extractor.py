@@ -1,4 +1,5 @@
 import asyncio
+import urllib.request
 from urllib.parse import urlparse, urlunparse
 import os
 from dotenv import load_dotenv
@@ -206,22 +207,29 @@ def clean_url(url):
 
 
 
-
-def allow(url,domain_cache):
-    """Check which sitesa are alloweded to scrap"""
+async def allow(url):
+    """Check which sites are allowed to scrape"""
+    logger.info("called allow url")
     try:
-        parsed = urlparse(url)
-        base_domain = f"{parsed.scheme}://{parsed.netloc}"
-        robots_url = f"{base_domain}/robots.txt"
-        #robots_url = f"{urlparse(url).scheme}://{urlparse(url).netloc}/robots.txt"
-        if base_domain not in domain_cache:
-            rp = robotparser.RobotFileParser(robots_url)
-            rp.read()
-            domain_cache[base_domain] = rp
+        parsed_url = urlparse(url)
+        robots_url = f"{parsed_url.scheme}://{parsed_url.netloc}/robots.txt"
+        rp = robotparser.RobotFileParser(robots_url)
+        
+        # Helper function to fetch robots.txt with a strict socket timeout
+        def fetch_robots_txt():
+            req = urllib.request.Request(robots_url, headers={'User-Agent': '*'})
+            # The timeout=5.0 here ensures the thread itself will abort if the site hangs
+            with urllib.request.urlopen(req, timeout=5.0) as response:
+                return response.read().decode('utf-8', errors='ignore').splitlines()
 
-
-        rp = domain_cache[base_domain]
-
+        try:
+            # Execute the timeout-enforced fetch in a background thread
+            lines = await asyncio.to_thread(fetch_robots_txt)
+            rp.parse(lines)
+        except Exception as e:
+            logger.warning(f"Timeout/Error reading robots.txt for {url}: {e}. Skipping.")
+            raise Exception("Timeout reading robots.txt")
+            
         if rp.can_fetch("*", url):
             return url
         else:
@@ -244,7 +252,7 @@ async def content_extractor(page,query):
     clean = []
     links = await page.locator("a").evaluate_all("elements => elements.map(el => el.href)")
 
-    domain_cache={}
+    
     for link in links:
         a = clean_url(link)
         if a is None:
@@ -253,7 +261,7 @@ async def content_extractor(page,query):
     print(len(clean))
     allows= []
     for i in clean:
-        b = allow(i,domain_cache)
+        b = await allow(i)
         if b is None:
             continue
         allows.append(b)
