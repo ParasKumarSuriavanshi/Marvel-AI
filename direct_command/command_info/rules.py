@@ -15,6 +15,7 @@ RULES = {
         ["set", "volume", "to", "<level>"],
         ["set", "volume", "<level>"],
         ["volume", "<level>"],
+        ["volume", "to", "<level>"],
 
     ],
 

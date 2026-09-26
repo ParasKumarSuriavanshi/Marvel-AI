@@ -63,7 +63,11 @@ async def web_search(query):
             await page.goto(query, wait_until='load')
         except:
             search_url = f"https://www.google.com/search?q={quote_plus(query)}"
-            await page.goto(search_url, wait_until='load')
+            try:
+                await page.goto(search_url, wait_until='load')
+            except:
+                logger.warning("Error in searching the query")
+                return {"success":False,"error":"Unable to open webpage"}
         subprocess.run(["hyprctl", "dispatch", "focuswindow", "class:chromium"],stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             
     await asyncio.sleep(1)

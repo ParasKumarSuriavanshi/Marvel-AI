@@ -77,7 +77,7 @@ setup_global_logger()
 logger = logging.getLogger(__name__)
 
 while True:
-    user_input = input("User1: ")
+    user_input = input("You: ")
 
     if user_input.lower() in ["exit", "quit"]:
         break

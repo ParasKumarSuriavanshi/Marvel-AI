@@ -39,8 +39,12 @@ def close_tab(url):
                 break
 
         page.close()
+        playwright.stop()
+        return{"success":True,"error":""}
     except:
         logger.warning("Didnt found tab to close")
+        playwright.stop()
+        return{"success":False,"error":"Didn't found the webpage to close"}
     playwright.stop()
 
 
@@ -70,6 +74,8 @@ def open_tab(query):
             exist = True
             page.bring_to_front()
             subprocess.run(["hyprctl", "dispatch", "focuswindow", "class:chromium"],stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            playwright.stop()
+            return{"success":True,"error":""}
             break
         elif "about:blank" in p.url or 'chrome://new-tab-page/' in p.url or "chrome-extension://hipekcciheckooncpjeljhnekcoolahp/index.html" in p.url:
             page = p
@@ -77,8 +83,16 @@ def open_tab(query):
     if not exist:
         if not page:
             page = context.new_page()
-        page.goto(query, wait_until='load')
-        subprocess.run(["hyprctl", "dispatch", "focuswindow", "class:chromium"],stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        try:
+            page.goto(query, wait_until='load')
+            subprocess.run(["hyprctl", "dispatch", "focuswindow", "class:chromium"],stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            playwright.stop()
+            return{"success":True,"error":""}
+        except:
+            logger.warning("Error in opeing the website")
+            playwright.stop()
+            return{"success":False,"error":"unable to open the webpage"}
+    
     
 
     playwright.stop()
@@ -96,9 +110,9 @@ def open_application(application):
         return {"success": False, "error": "No such application found in the registry"}
 
     if is_valid_url(app):
-        open_tab(app)
-
-        logger.info(f"Successfully opened {application}")
+        a = open_tab(app)
+        logger.info(f"{application} opend - {a}")
+        return a
     else:
         subprocess.Popen(app,stdout=subprocess.DEVNULL, 
             stderr=subprocess.DEVNULL)
@@ -117,8 +131,8 @@ def close_application(application):
 
     if is_valid_url(app):
         keyboard = Controller()
-        close_tab(app)
-
+        a= close_tab(app)
+        return a
         # # 1. Ensure Chromium is the focused window in Hyprland
         # subprocess.run(["hyprctl", "dispatch", "focuswindow", "class:chromium"],stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         # time.sleep(0.1) # Small buffer for focus swap

@@ -25,7 +25,7 @@ if INDEX_PATH.exists():
     index = faiss.read_index(str(INDEX_PATH))
     logger.info(f"index for semantic vector file - {index}")
 else:
-    logger.warning("sematic vector file doesn't exist")
+    #logger.warning("sematic vector file doesn't exist")
     base_index = faiss.IndexFlatL2(DIMENSION)
     index = faiss.IndexIDMap2(base_index)
     logger.info(f"created index for semantic vector file - {index}")

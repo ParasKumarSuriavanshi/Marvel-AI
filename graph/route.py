@@ -148,6 +148,10 @@ def simple_respose(state):
     """It will give direct simple respose foe cammand execution without llm"""
     logger.debug("simple response called no llm use")
     message = "Command Executed"
+    direct = state.get("direct_command")
+    error=direct.get("error")
+    if error:
+        message="Unable to execute the command"
     manual_ai_result = AIMessage(content=message)
     return {"messages": [manual_ai_result]}
 

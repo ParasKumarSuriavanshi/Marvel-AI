@@ -17,17 +17,6 @@ class struct(BaseModel):
 def user_id_extractor(state:MarvelState):
     """This function decide the user ID means which user is using the assistant and store it in the state."""
 
-    range = state.get("message_range", 0)
-
-    human_msg = "\n".join(
-    f"Human message {i}: {msg.content}" 
-    for i, msg in enumerate(state["messages"][range:], start=1) 
-    if msg.type == "human")
-
-    print("============conversation=============")
-    print(human_msg)
-    print("============conversation=============")
-
 
     query = state["messages"][-1].content.lower()
 

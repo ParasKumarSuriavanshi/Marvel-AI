@@ -68,7 +68,7 @@ def command_parser(state):
     split = []
     o = 0
     while o < len(token):
-        if token[o] in ACTION_WORDS or token[o] =="and":
+        if token[o] in ACTION_WORDS: #or token[o] =="and":
             split.append(o)
             o += 1
         o+= 1  

@@ -29,7 +29,6 @@ def workflow_command(state):
             direct["error"] = "No executor found"
             logger.error("No executor found for single command execution")
             return{"direct_command":direct}
-        print(arguments)
         if not arguments:
             direct["success"] = False
             direct["error"] = "No argument found"

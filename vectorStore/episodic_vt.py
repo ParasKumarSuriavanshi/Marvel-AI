@@ -48,7 +48,7 @@ if INDEX_PATH.exists():
     index = faiss.read_index(str(INDEX_PATH))
     logger.info(f"index for episodic vector file - {index}")
 else:
-    logger.warning("episodic vector file doesn't exist")
+    #logger.warning("episodic vector file doesn't exist")
     base_index = faiss.IndexFlatL2(DIMENSION)
     index = faiss.IndexIDMap2(base_index)
     logger.info(f"created index for episodic vector file - {index}")
