@@ -186,7 +186,15 @@ def decrease_brightness(level:int):
 
 @tool
 def web_searching(query):
-    """Use this tool to search the internet, if you have to answer user query and you dont have the knwoledge to answer that."""
+    """Searches the internet for real-time information.
+    
+    MUST be called immediately without asking permission for:
+    - Current events, breaking news, or anything happening in recent days/hours.
+    - Weather, live data, or real-time tracking.
+    - Explicit user requests to search the web.
+    
+    Do NOT use this tool for general knowledge, coding, math, historical facts, or casual conversation.
+    """
     a =asyncio.run(web_search(query))
 
     return{"tool":"web_searching","tool_used":True,"execution_success":a["success"],"error":a["error"],"web_data":a["vector_data"]}

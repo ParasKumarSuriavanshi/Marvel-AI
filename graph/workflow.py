@@ -98,7 +98,6 @@ def build():
     builder.add_node("workflow_command", workflow_command)
 
     builder.add_edge("normalizer", "command_parser")
-    builder.add_edge("workflow_command","simple_response")
 
     #--------------Direct Command------------
 

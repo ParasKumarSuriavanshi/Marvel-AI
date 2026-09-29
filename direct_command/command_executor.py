@@ -82,6 +82,7 @@ def open_tab(query):
             page = p
             break
     if not exist:
+        print(page)
         if not page:
             page = context.new_page()
         try:

@@ -36,7 +36,7 @@ def direct_command_router(state):
     logger.info("successfully called direct command router")
 
     pattern = "volume [\\w|\\d]+|open [\\w]+|launch [\\w]+"
-    text = state["messages"][-1].content
+    text = state["messages"][-1].content.lower()
     if not text:
         return "not_direct"
 

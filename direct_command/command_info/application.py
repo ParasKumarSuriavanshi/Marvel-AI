@@ -2,7 +2,7 @@ APPLICATIONS = {
     "chrome": "chromium",
     "browser":"chromium",
     "whatsapp": "https://web.whatsapp.com/",
-    "netflix":"https://www.netflix.com/browse",
+    "netflix":"https://www.netflix.com/",
     "jio":"https://www.hotstar.com/",
     "hotstar":"https://www.hotstar.com/",
     "github":"https://github.com/ParasKumarSuriavanshi",
