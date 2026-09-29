@@ -31,10 +31,10 @@ def Marvel_ai(marvel_state) :
     #     if msg.type == 'human':
     #         last_msg = msg
 
-    print(marvel_state["messages"])
-    print("=====================^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^============")
-    print(last_msg)
-    print("=====================^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^============")
+    logger.debug(f"State messages are -{marvel_state["messages"]}")
+    # print("=====================^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^============")
+    # print(last_msg)
+    # print("=====================^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^============")
     #web_data = None
     #print(marvel_state)
     direct = marvel_state.get("direct_command","No command hostory available")
@@ -90,6 +90,8 @@ def Marvel_ai(marvel_state) :
 
     COMMAND EXECUTION HISTORY:
     {direct}
+    
+
 
     === TOOL USAGE POLICY ===
     You have access to tools via tool-calling. Only call a tool when strictly required.
@@ -117,6 +119,7 @@ def Marvel_ai(marvel_state) :
     OTHER TOOLS (Application control, system actions, etc.):
     - Execute them only when the user's intent clearly specifies an action (e.g., "Open Chrome", "Set volume to 50").
     - Answer directly without tools if a request only requires reasoning or conversation.
+    -Make correction in spelling where ever need before calling tool and giving input to tool.
 
     RESPONSE STYLE:
     - Respond in a natural, friendly, companion-like tone.

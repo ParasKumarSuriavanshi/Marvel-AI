@@ -112,7 +112,7 @@ def command_parser(state):
         result = matcher(i)
 
         if result is not None:
-            print(result)
+            #print(result)
             if result.get("command") == "MUTE":
                 result["arguments"] = {'arguments': 'na'}
             commands.append(result)

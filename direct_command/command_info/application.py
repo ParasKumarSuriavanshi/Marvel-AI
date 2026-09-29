@@ -1,5 +1,6 @@
 APPLICATIONS = {
     "chrome": "chromium",
+    "google chrome": "chromium",
     "browser":"chromium",
     "whatsapp": "https://web.whatsapp.com/",
     "netflix":"https://www.netflix.com/",

@@ -16,10 +16,12 @@ logger = logging.getLogger(__name__)
 #return{"success":True,"error":""}
 @tool
 def open_application(application:str):
-    """Call it to open any application specified by the user."""
+    """Call it to open any application specified by the user.
+    - only give name of application.
+    - no url or anythig other than name"""
     logger.info("Successfully called open_applicatio.")
 
-    app = APPLICATIONS.get(application)
+    app = APPLICATIONS.get(application.lower())
     if not app:
         logger.error(f"No such application found in registry to open - {application}")
         return {"tool":"open_application","tool_used":True,"execution_success":False,"error":"no such app in registry"}
@@ -38,10 +40,12 @@ def open_application(application:str):
 
 @tool
 def close_application(application:str):
-    """Call it to close close any application that user specify."""
+    """Call it to close close any application that user specify.
+    - only give name of application.
+    - no url or anythig other than name"""
     logger.info("Successfully called close_applicatio.")
-
-    app = APPLICATIONS.get(application)
+    
+    app = APPLICATIONS.get(application.lower())
     if not app:
         logger.error(f"No such application found in registry to close- {application}")
         return {"tool":"close_application","tool_used":True,"execution_success":False,"error":"no such app in registry"}
@@ -187,6 +191,9 @@ def decrease_brightness(level:int):
 @tool
 def web_searching(query):
     """Searches the internet for real-time information.
+    -if want to search a website give full url 
+    EXAMPLE 
+    https://www.xyz.com
     
     MUST be called immediately without asking permission for:
     - Current events, breaking news, or anything happening in recent days/hours.

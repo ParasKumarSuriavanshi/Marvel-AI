@@ -168,7 +168,16 @@ def simple_respose(state):
 
 def empty_node(state):
     logger.info("Successfully called empty node")
-    return state
+    
+    # Create a copy of the state to avoid mutating the original
+    filtered_state = dict(state)
+    
+    # Remove 'memory_nodes' so this node doesn't attempt to update it
+    filtered_state.pop("memory_nodes", None)
+    logger.debug(f"normal state in empty_node - {state}")
+    logger.debug(f"filtered_state in empty_node - {filtered_state}")
+    return filtered_state
+
 def get_empty_direct_command() :
     return {
         "normalize_input": "",
