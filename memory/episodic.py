@@ -167,7 +167,7 @@ def handle_episodic_memory(state):
 
     for operation in memory_data.get("memories", []):
 
-        if operation.get("memory_type") != "episodic":
+        if operation.get("memory_type").lower() != "episodic":
             logger.info("operation not episodic type")
             continue
 
@@ -176,7 +176,7 @@ def handle_episodic_memory(state):
         source = operation.get("source", "unknown")
         data = operation.get("data", {})
         importance = data.get("importance", 1.0)
-        user_id = operation.get("user_id")
+        user_id = state.get("user_id")
         memory_id = operation.get("memory_id")
 
 

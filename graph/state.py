@@ -108,20 +108,33 @@ class MemoryManagerOutput(TypedDict):
 class Parsed_command(TypedDict):
     command: str
     arguments: dict[str , Any]
+    success:bool
+    error:str
 
 class Direct_commands(TypedDict):
     normalize_input:str
     tokenized: list[str]
     commands:list[Parsed_command]
     unmatched_commands: list[str]
-    success: bool
-    error:str
     web_data:list[str]
     
 
 #===========Direct Commands============
 
 
+#=============Tool===================
+
+# class tool_result(TypedDict):
+#     tool:str
+
+
+class tool_info(TypedDict):
+    tool:str
+    tool_used:bool
+    execution_success:bool
+    error:str
+
+#=============Tool===================
 
 class MarvelState(TypedDict):
     message_range:int
@@ -130,6 +143,7 @@ class MarvelState(TypedDict):
     final_response: Optional[str]
     memory_nodes: MemoryManagerOutput #Annotated[MemoryManagerOutput, reducer_memory_nodes]
     direct_command: Direct_commands
+    tool_info: tool_info
 
 
 

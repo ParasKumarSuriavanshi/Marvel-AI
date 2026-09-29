@@ -110,7 +110,7 @@ def handle_json(state):
     memory_data = state.get("memory_nodes", {})
 
     for operation in memory_data.get("memories", []):
-        if operation.get("memory_type") != "semantic":
+        if operation.get("memory_type").lower() != "semantic":
             logger.info("operation not semantic type")
             continue
         
@@ -118,7 +118,7 @@ def handle_json(state):
         action = operation.get("action")
         data = operation.get("data", {})
         memory_id = operation.get("memory_id")
-        user_id = operation.get("user_id")
+        user_id = state.get("user_id")
 
         if memory_id is None:
             logger.warning(f"Error: memory_id is required for action '{action}' but is missing in semantic json.")

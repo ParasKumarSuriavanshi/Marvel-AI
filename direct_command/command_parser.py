@@ -1,4 +1,5 @@
 from direct_command.command_info.rules import RULES
+import subprocess
 import logging
 #==========Logger==============
 
@@ -47,7 +48,8 @@ def command_parser(state):
     token = w.get("tokenized")
 
     input1 = w.get("normalize_input")
-
+    # token =state
+    # input1=None
     
     ACTION_WORDS = [
         "open",
@@ -61,8 +63,10 @@ def command_parser(state):
         "turn",
         "play",
         "pause",
-        "search",
-        "volume"
+        #"search",
+        "volume",
+        "mute",
+        "unmute"
         ]
 
     split = []
@@ -71,9 +75,12 @@ def command_parser(state):
         if token[o] in ACTION_WORDS: #or token[o] =="and":
             split.append(o)
             o += 1
+        elif token[o] =="and":
+            split.append(o+1)
+            o+=1
         o+= 1  
 
-
+    #print(split)
     separated_commands = []
 
     for j in range(0,len(split)):
@@ -81,18 +88,37 @@ def command_parser(state):
             separated_commands.append(token[split[j]:split[j+1]])
         except Exception:
             separated_commands.append(token[split[j]:])
-
+    split = list(set(split))
     commands = []
     unmatch = []
     logger.debug(f"Commands by command parser is {separated_commands}")
+    # try:
+    #     if separated_commands[0][0] in ["mute","unmute"]:
+    #         subprocess.run(["wpctl", "set-mute", "@DEFAULT_AUDIO_SINK@", "toggle"], check=True)
+    #         if len(separated_commands) == 1:
+    #             commands.append(separated_commands[0])
+    #             return {"direct_command":{
+    #                 "normalize_input": input1,
+    #                 "tokenized": token,
+    #                 "commands": commands,
+    #                 "unmatched_commands":unmatch
+    #             }}
+    # except:
+    #     pass
+    #print(separated_commands)
+        
+
     for i in separated_commands:
         result = matcher(i)
 
         if result is not None:
+            print(result)
+            if result.get("command") == "MUTE":
+                result["arguments"] = {'arguments': 'na'}
             commands.append(result)
         else:
             unmatch.append(i)
-    
+    #print(unmatch)
     logger.debug(f"commands passing to state are {commands}")
     logger.debug(f"commands Unmatched are {unmatch}")
     
@@ -103,4 +129,5 @@ def command_parser(state):
         "unmatched_commands":unmatch
     }}
 
-# command_parser(['open', 'netflix', 'search', 'mentalist'])
+#command_parser(['open', 'netflix', 'and','search', 'mentalist','sjdh'])
+#command_parser(['open', 'netflix', 'and', 'set', 'brightness', 'to', '50'])

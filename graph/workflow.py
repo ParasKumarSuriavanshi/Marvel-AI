@@ -16,11 +16,12 @@ from langgraph.graph import END, START, StateGraph
 
 from agent.Marvel_AI import Marvel_ai
 from graph.state import MarvelState
-from model.llm import llm
 
 from direct_command.normalizer import normalizer
 from direct_command.command_parser import command_parser
 from direct_command.workflow_command import workflow_command
+
+from agent.tool_calling_agent import tool_node,tool_contional_route
 
 import logging
 #==========Logger==============
@@ -31,44 +32,6 @@ logger = logging.getLogger(__name__)
 
 
 
-def a(state):
-    logger.info("a")
-
-
-    direct = state.get("direct_command")
-    commands = direct.get("commands")
-    print("")
-    print("==========state============")
-    print(state.get("direct_command"))
-    print("==========state============")
-
-   
-
-    prompt=""
-    for i in commands:
-        if i.get("command") =="WEB_SEARCH":
-            arguments = i.get("arguments")
-            query = arguments.get("query")
-            prompt = f"""User asked a query using web search, so your resposibility is to answer the query using the web data provided to you from the internet.
-                        USER QUERY:
-                            {query}
-                        WEB DATA:
-                            {direct.get("web_data")}
-
-                        make sure to keep answer short to medium length ad concise."""
-        else:
-            message="Command executed"
-
-    if prompt:
-        result = llm.invoke(prompt)
-        
-        logger.info("LLM successfully created the final result for web search.")
-            
-        return {"messages": [result]}
-    else:
-        manual_ai_result = AIMessage(content=message)
-        return {"messages": [manual_ai_result]}
-
             
 
 
@@ -76,6 +39,19 @@ def build():
     """create workflow graph for the Marvel AI system"""
     logger.info("Graph build frnc called successfully")
     builder = StateGraph(MarvelState)
+
+
+
+    builder.add_node("tool_contion",tool_contional_route)
+
+    builder.add_node("tool_node",tool_node)
+    builder.add_edge("tool_node","Marvel_ai")
+    
+    builder.add_conditional_edges("Marvel_ai",tool_contional_route,{"tool_node":"tool_node","no_tool":"direct_command_overwrite"})
+    
+
+
+
 
 
     builder.add_node("Marvel_ai", Marvel_ai)
@@ -109,9 +85,9 @@ def build():
     #------------Memory---------------------
 
 
-    builder.add_conditional_edges("empty_node", main_router,{"manager": "manager", "answer": "Marvel_ai"})
-    builder.add_conditional_edges("user_id",direct_command_router,{"direct":"normalizer", "not_direct":"empty_node"})
-    builder.add_conditional_edges("command_parser", command_router, {"workflow":"workflow_command", "llm":"empty_node"})
+    builder.add_conditional_edges("user_id", main_router,{"manager": "manager", "answer": "empty_node"})
+    builder.add_conditional_edges("empty_node",direct_command_router,{"direct":"normalizer", "not_direct":"Marvel_ai"})
+    builder.add_conditional_edges("command_parser", command_router, {"workflow":"workflow_command", "llm":"Marvel_ai"})#change here workflow_command
     builder.add_conditional_edges("workflow_command",llm_needed_or_not, {"llm_needed":"Marvel_ai","not_needed":"simple_response"})
 
 
@@ -122,10 +98,11 @@ def build():
     builder.add_node("workflow_command", workflow_command)
 
     builder.add_edge("normalizer", "command_parser")
+    builder.add_edge("workflow_command","simple_response")
 
     #--------------Direct Command------------
 
-    builder.add_edge("Marvel_ai" , "direct_command_overwrite")
+    #builder.add_edge("Marvel_ai" , "direct_command_overwrite")
     builder.add_edge("simple_response", "direct_command_overwrite")
     builder.add_edge("direct_command_overwrite", END)
 

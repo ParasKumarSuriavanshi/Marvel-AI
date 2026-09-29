@@ -2,6 +2,7 @@ from urllib.parse import urlparse
 from direct_command.command_info.application import APPLICATIONS
 from web.brower_controller import web_search
 import subprocess
+import re
 from pynput.keyboard import Key, Controller
 import time
 import logging
@@ -114,8 +115,9 @@ def open_application(application):
         logger.info(f"{application} opend - {a}")
         return a
     else:
-        subprocess.Popen(app,stdout=subprocess.DEVNULL, 
-            stderr=subprocess.DEVNULL)
+        subprocess.run(['hyprctl', 'dispatch', 'workspace', 'empty'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                            
+        subprocess.Popen(app,stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         logger.info(f"Successfully opened {application}")
     return{"success": True, "error": ""}
 
@@ -150,44 +152,82 @@ def close_application(application):
 
 
 
+# def get_active_sink_id():
+#     result = subprocess.run(["wpctl", "status"], capture_output=True, text=True)
+    
+#     no_video = True
+#     result = result.stdout.splitlines()
+#     audio =[]
+#     for line in result:
+#         #print(line)
+#         if "Video" in line:
+#             no_video = False
+#         if "Audio:" in line or no_video:
+#             if "*" in line:
+#                 audio.append(line)
+#     digit =re.search(r"\d+",audio[-1]).group()
+#     return digit
+
+
+
+
 
     
 
 def set_volume(level):
     """It set the volume which is specified."""
     logger.info("Successfully called set_volume.")
+    try:
+        volume = (max(0,min(100,int(level))))/100
+        command = ["wpctl","set-volume", "@DEFAULT_AUDIO_SINK@", f"{volume}"]
 
-    volume = (max(0,min(100,int(level))))/100
-    command = ["wpctl","set-volume", "@DEFAULT_AUDIO_SINK@", f"{volume}"]
+        subprocess.run(command,stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-    subprocess.run(command,stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
-    logger.info(f"Successfully set the volume to level - {level}")
-    return{"success": True, "error": ""}
+        logger.info(f"Successfully set the volume to level - {level}")
+        return{"success": True, "error": ""}
+    except:
+        logger.warning("Error in set_volume")
+        return{"success":False,"error":"Unable to set volumn"}
 
 def increase_volume(level):
     """It increase the volume by level which is specified."""
     logger.info("Successfully called increase_volume.")
+    try:
+        volume = (max(0,min(100,int(level))))
+        command = ["wpctl","set-volume", "@DEFAULT_AUDIO_SINK@", f"{volume}%+"]
 
-    volume = (max(0,min(100,int(level))))
-    command = ["wpctl","set-volume", "@DEFAULT_AUDIO_SINK@", f"{volume}%+"]
+        subprocess.run(command,stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-    subprocess.run(command,stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
-    logger.info(f"Successfully increased the volume by level - {level}")
-    return{"success": True, "error": ""}
+        logger.info(f"Successfully increased the volume by level - {level}")
+        return{"success": True, "error": ""}
+    except:
+        logger.warning("Error in inc_volume")
+        return{"success":False,"error":"Unable to increase volumn"}
 
 def decrease_volume(level):
     """It decrease the volume by level which is specified."""
     logger.info("Successfully called decrease_volume.")
+    try:
+        volume = (max(0,min(100,int(level))))
+        # device = get_active_sink_id()
+        # print(device)
+        command = ["wpctl","set-volume", "@DEFAULT_AUDIO_SINK@", f"{volume}%-"]
 
-    volume = (max(0,min(100,int(level))))
-    command = ["wpctl","set-volume", "@DEFAULT_AUDIO_SINK@", f"{volume}%-"]
+        subprocess.run(command,stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-    subprocess.run(command,stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        logger.info(f"Successfully decreased the volume by level - {level}")
+        return{"success": True, "error": ""}
+    except:
+        logger.warning("Error in decrease_volume")
+        return{"success":False,"error":"Unable to decrease volumn"}
 
-    logger.info(f"Successfully decreased the volume by level - {level}")
-    return{"success": True, "error": ""}
+
+def mute(arguments):
+    """Mute and unmute the system"""
+
+    subprocess.run(["wpctl", "set-mute", "@DEFAULT_AUDIO_SINK@", "toggle"], check=True)
+
+    return{"success":True,"error":""}
 
 
 
@@ -198,39 +238,47 @@ def decrease_volume(level):
 def set_brightness(level):
     """It set the brightness which is specified."""
     logger.info("Successfully called set_brightness.")
+    try:
+        brightness = (max(5,min(100,int(level))))
+        command = ["brightnessctl","-q", "set", f"{brightness}%"]
 
-    brightness = (max(5,min(100,int(level))))
-    command = ["brightnessctl","-q", "set", f"{brightness}%"]
+        subprocess.run(command,stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-    subprocess.run(command,stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
-    logger.info(f"Successfully set the bightness to level - {level}")
-    return{"success": True, "error": ""} 
+        logger.info(f"Successfully set the bightness to level - {level}")
+        return{"success": True, "error": ""}
+    except:
+        logger.warning("Error in set_brightness")
+        return{"success":False,"error":"Unable to set brughtness"}
 
 def increase_brightness(level):
     """It increase the brightness by level which is specified."""
     logger.info("Successfully called increase_brightness.")
+    try:
+        brightness = (max(5,min(100,int(level))))
+        command = ["brightnessctl","-q", "set", f"+{brightness}%"]
 
-    brightness = (max(5,min(100,int(level))))
-    command = ["brightnessctl","-q", "set", f"+{brightness}%"]
+        subprocess.run(command,stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-    subprocess.run(command,stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
-    logger.info(f"Successfully increased the brightness by level - {level}")
-    return{"success": True, "error": ""}
+        logger.info(f"Successfully increased the brightness by level - {level}")
+        return{"success": True, "error": ""}
+    except:
+        logger.warning("Error in increase_brightness")
+        return{"success":False,"error":"Unable to increase brightnness"}
 
 def decrease_brightness(level):
     """It decrease the brightness by level which is specified."""
     logger.info("Successfully called decrease_brightness.")
+    try:
+        brightness = (max(5,min(100,int(level))))
+        command = ["brightnessctl","-q", "set", f"{brightness}%-"]
 
-    brightness = (max(5,min(100,int(level))))
-    command = ["brightnessctl","-q", "set", f"{brightness}%-"]
+        subprocess.run(command,stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-    subprocess.run(command,stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
-    logger.info(f"Successfully decreased the brightness by level - {level}")
-    return{"success": True, "error": ""}
-
+        logger.info(f"Successfully decreased the brightness by level - {level}")
+        return{"success": True, "error": ""}
+    except:
+        logger.warning("Error in decrease_brightnes")
+        return{"success":False,"error":"Unable to decrease brightness"}
 
 
 
@@ -252,6 +300,7 @@ COMMAND_EXECUTOR = {
     "SET_VOLUME":set_volume,
     "DECREASE_VOLUME":decrease_volume,
     "INCREASE_VOLUME":increase_volume,
+    "MUTE":mute,
     "SET_BRIGHTNESS":set_brightness,
     "DECREASE_BRIGHTNESS":decrease_brightness,
     "INCREASE_BRIGHTNESS":increase_brightness,

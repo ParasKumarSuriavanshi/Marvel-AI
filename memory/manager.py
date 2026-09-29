@@ -344,6 +344,15 @@ def manager(MARVEL_STATE):
         Analyze the conversation history and return a JSON object.
             -Make multiple memory operations if required.
 
+        Your task is ONLY to analyze the conversation and decide whether information should be stored, updated, or deleted.
+    
+                You have EXACTLY THREE memory types:
+        
+                1. PROFILE
+                2. EPISODIC
+                3. SEMANTIC
+        
+        Never use any other memory type.
 
         The application uses structured output.
 

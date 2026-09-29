@@ -1,0 +1,258 @@
+1. Application commands
+open chrome
+open whatsapp
+open netflix
+open calculator
+open terminal
+open vscode
+
+close chrome
+close whatsapp
+close netflix
+
+restart chrome
+
+Patterns:
+
+open <application>
+launch <application>
+start <application>
+
+close <application>
+exit <application>
+stop <application>
+2. Volume commands
+volume 50
+set volume to 50
+increase volume
+decrease volume
+mute
+unmute
+
+Useful patterns:
+
+volume <0-100>
+set volume to <0-100>
+increase volume by <number>
+decrease volume by <number>
+mute volume
+unmute volume
+3. Brightness commands
+brightness 70
+set brightness to 70
+increase brightness
+decrease brightness
+
+Patterns:
+
+brightness <0-100>
+set brightness to <0-100>
+increase brightness by <number>
+decrease brightness by <number>
+4. System power commands
+lock my computer
+lock the computer
+
+shutdown
+shut down my computer
+
+restart
+restart my computer
+
+sleep
+put my computer to sleep
+
+⚠️ These should have a confirmation/safety layer, especially shutdown/restart.
+
+5. Media commands
+play
+pause
+resume
+stop
+next
+previous
+
+More natural variants:
+
+pause the music
+resume
+play the music
+skip this
+next song
+previous song
+6. Window commands
+
+These can eventually be direct commands:
+
+minimize window
+maximize window
+close window
+
+switch window
+next window
+previous window
+
+show desktop
+7. System information
+
+These are excellent fast-path commands:
+
+what's my battery
+battery status
+
+what's my cpu usage
+cpu usage
+
+how much ram am I using
+memory usage
+
+system information
+system status
+
+Marvel can directly call the corresponding system tool.
+
+8. Time/date commands
+what time is it
+current time
+tell me the time
+
+what's today's date
+what date is it
+today's date
+
+No LLM required.
+
+9. Network commands
+
+Eventually:
+
+is wifi on
+turn wifi on
+turn wifi off
+
+is bluetooth on
+turn bluetooth on
+turn bluetooth off
+
+what's my internet status
+10. Screenshot commands
+
+Very useful for a laptop assistant:
+
+take a screenshot
+capture the screen
+screenshot
+
+Potentially:
+
+take a screenshot of this window
+
+The latter may require more intelligent interpretation.
+
+11. File/folder commands
+
+Some can be direct:
+
+open downloads
+open documents
+open desktop
+open home folder
+
+create folder <name>
+
+For example:
+
+open downloads
+
+→ directly execute file-manager command.
+
+12. Marvel-specific commands
+
+You should also have commands for controlling Marvel itself.
+
+stop listening
+start listening
+
+go to sleep
+wake up
+
+mute yourself
+unmute yourself
+
+what can you do
+help
+
+change voice
+change response style
+
+exit marvel
+restart marvel
+
+These should never need the LLM.
+
+13. Conversation control
+
+Some commands can bypass the normal agent pipeline:
+
+repeat that
+say that again
+
+stop
+cancel
+never mind
+
+be quiet
+stop talking
+
+continue
+
+For example:
+
+User: "Open Chrome."
+
+Marvel: "Chrome is open."
+
+User: "Repeat that."
+
+
+The system can directly retrieve the previous response.
+
+14. Wake/interaction commands
+
+Since you're using:
+
+Hey Marvel
+
+you can have:
+
+Hey Marvel, open Chrome
+Hey Marvel, volume 50
+Hey Marvel, lock my PC
+
+The important thing is:
+
+Wake word + command
+
+should go directly to command classification.
+
+You don't want:
+
+Hey Marvel
+    ↓
+Marvel wakes
+    ↓
+Wait
+    ↓
+"What's your command?"
+
+Instead:
+
+"Hey Marvel, open Chrome"
+          ↓
+Remove wake word
+          ↓
+"open Chrome"
+          ↓
+Fast-path detector
+          ↓
+open_application("chrome")

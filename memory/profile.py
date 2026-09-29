@@ -185,12 +185,12 @@ def handle_profile_memory(state):
 
     for operation in memory_data.get("memories", []):
         
-        if operation.get("memory_type") != "profile":
+        if operation.get("memory_type").lower() != "profile":
             logger.info("operation not profile type")
             continue
 
         action = operation.get("action")
-        user_id = operation.get("user_id")
+        user_id = state.get("user_id")
         data = operation.get("data",{})
         category = data.get('category', '')
         field = data.get('field', '')

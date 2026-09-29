@@ -25,14 +25,16 @@ def workflow_command(state):
         
 
         if executor is None:
-            direct["success"] = False
-            direct["error"] = "No executor found"
+            i["success"] = False
+            i["error"] = "No executor found"
             logger.error("No executor found for single command execution")
+            direct["commands"]=commands
             return{"direct_command":direct}
         if not arguments:
-            direct["success"] = False
-            direct["error"] = "No argument found"
+            i["success"] = False
+            i["error"] = "No argument found"
             logger.error("no argumet to run the command")
+            direct["commands"]=commands
             return{"direct_command":direct}
 
         logger.debug(f"command to execute is {command},{arguments}")
@@ -41,10 +43,12 @@ def workflow_command(state):
         else:
             value = executor(**arguments)
         #value = executor(**arguments)
-        direct["success"] = value.get("success")
-        direct["error"] = value.get("error")
+        i["success"] = value.get("success")
+        i["error"] = value.get("error")
         direct["web_data"] = value.get("vector_data", "No data found")
         if value.get("success") is False:
             logger.debug(f"Error after calling {executor}")
             break
+    direct["commands"]=commands
+    logger.debug(f"direct_command values are - {direct}")
     return {"direct_command":direct}

@@ -31,6 +31,11 @@ RULES = {
     
         ],
 
+    "MUTE":[
+        ["mute"],
+        ["unmute"]
+    ],
+
     "SET_BRIGHTNESS": [
             ["set", "brightness", "to", "<level>"],
             ["set", "brightness", "<level>"],
@@ -49,8 +54,8 @@ RULES = {
     
         ],
 
-    "WEB_SEARCH": [
-        ["search", "<query>"],
-        ["search", "for", "<query>"],
-    ],
+    # "WEB_SEARCH": [
+    #     ["search", "<query>"],
+    #     ["search", "for", "<query>"],
+    # ],
 }

@@ -20,6 +20,7 @@ def main_router(state) -> Literal["manager", "answer"]:
     range = state.get("message_range", 0)
 
     logger.debug(f"condition router starting range is - {range}")
+    logger.debug(f"conditional router length is - {len(state.get("messages"))- range}")
     if len(state.get("messages")) - range >= 9:
         logger.debug("condition router returns - 'manger' , 'answer'")
         return ["manager", "answer"]
@@ -51,8 +52,10 @@ def direct_command_router(state):
     "turn",
     "play",
     "pause",
-    "search",
-    "volume"}
+    #"search",
+    "volume",
+    "mute",
+    "unmute"}
 
     NON_COMMAND_PATTERNS = [
         "how do i",
@@ -66,14 +69,14 @@ def direct_command_router(state):
         "tell me how"]
 
 
-    if "search" not in text:
-        for i in NON_COMMAND_PATTERNS:
-            if i in text:
-                logger.debug(f"direct commant router response - NOT DIRECT")
-                return "not_direct"
-    else:
-        logger.debug(f"direct commant router response - DIRECT")
-        return "direct"
+    # if "search" not in text:
+    #     for i in NON_COMMAND_PATTERNS:
+    #         if i in text:
+    #             logger.debug(f"direct commant router response - NOT DIRECT")
+    #             return "not_direct"
+    # else:
+    #     logger.debug(f"direct commant router response - DIRECT")
+    #     return "direct"
     
     for i in ACTION_WORDS:
         if i in text:
@@ -92,15 +95,15 @@ def command_router(state):
     direct = state.get("direct_command")
     command = direct.get("commands")
     unmatched = direct.get("unmatched_commands")
-    if unmatched:
-        logger.debug("command_parser respose is - LLM")
+    if len(unmatched)>0:
+        logger.debug("command_parser respose 1is - LLM")
         return "llm"
     elif len(command) >= 1:
-        logger.debug("commad_router respose is - WORKFLOW")
+        logger.debug("commad_router respose2 is - WORKFLOW")
         return "workflow"
     
     else:
-        logger.debug("commad_router respose is - LLM")
+        logger.debug("commad_router respose3is - LLM")
         return "llm"
 
 
@@ -111,14 +114,20 @@ def llm_needed_or_not(state):
 
     direct = state.get("direct_command")
     commands = direct.get("commands")
-    if commands:
+    unmatched_commands = None
+    unmatched_commands = direct.get("unmatched_commands")
+    if len(unmatched_commands) >0:
+        logger.debug("llm_needed1 or not response - LLM_NEEDED")
+        return "llm_needed"
+    
+    if len(commands)>0:
         for i in commands:
-            if i.get("command") =="WEB_SEARCH":
-                logger.debug("llm_needed or not response - LLM_NEEDED")
+            if not i.get("success"):
+                logger.debug("llm_needed3 or not response - LLM_NEEDED")
                 return "llm_needed"
-        logger.debug("llm_needed or not response - NOT_NEEDED")
+        logger.debug("llm_needed4 or not response - NOT_NEEDED")
         return "not_needed"
-    logger.debug("llm_needed or not response - LLM_NEEDED")
+    logger.debug("llm_needed 5or not response - LLM_NEEDED")
     return "llm_needed"
 
 

@@ -1,6 +1,8 @@
 
 from langchain_core.messages import HumanMessage
+from voice import speak, wake
 from graph.workflow import build
+from rich import print
 import logging
 
 
@@ -75,9 +77,27 @@ def user_id(query):
 
 setup_global_logger()
 logger = logging.getLogger(__name__)
-
+require_wake=True
 while True:
-    user_input = input("You: ")
+    # if require_wake:
+    #     wake()
+    #     require_wake = False
+    # text = speak()
+
+
+    print(("====================================="))
+    #print(text)
+    user_input = input("You: ")#text.lower()
+    print(("====================================="))    
+
+
+    if user_input == "bye" or user_input == "thats it" or user_input == "that's it" or user_input == "okay":
+        require_wake = True
+        continue
+    if not user_input or user_input.isspace():
+        logger.debug("No speech detected or understood. Restarting loop.")
+        require_wake=True
+        continue
 
     if user_input.lower() in ["exit", "quit"]:
         break
@@ -101,7 +121,6 @@ while True:
 
 for message in result.get("messages", []):
     # This will print something like "human: how are you" or "ai: I'm doing well!"
-    print("-" * 20) # Adds a separator line between messages
     print(f"{message.type}: {message.content}\n")
     print("-" * 20) # Adds a separator line between messages
 

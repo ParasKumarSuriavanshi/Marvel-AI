@@ -17,6 +17,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 #==========Logger===============
+load_dotenv()
 
 
 BASE_DIRT = Path(__file__).resolve().parent.parent
@@ -30,10 +31,13 @@ def retrieve(query):
     logger.info("Successfully called retriver for vector retrieve")
 
     embeddding = OllamaEmbeddings(model="nomic-embed-text")
+    try:
 
-    vector_db = FAISS.load_local(str(DB_PATHH),embeddings=embeddding,allow_dangerous_deserialization=True)
+        vector_db = FAISS.load_local(str(DB_PATHH),embeddings=embeddding,allow_dangerous_deserialization=True)
+    except:
+        return ["no data found"]
 
-    retrieve =vector_db.as_retriever(search_kwargs={"k":4})
+    retrieve =vector_db.as_retriever(search_kwargs={"k":10})
 
     docs = retrieve.invoke(query)
 
@@ -130,12 +134,13 @@ async def web_crawl(url:list,query:str)->list:
         keep_data_attributes=False,
         page_timeout=20000,
         remove_overlay_elements=True,
-        cache_mode=CacheMode.BYPASS
+        cache_mode=CacheMode.BYPASS,
+        verbose=False
 
     )
 
 
-    browser = BrowserConfig(browser_mode="chromium", headless=True,text_mode=True,light_mode=True)
+    browser = BrowserConfig(browser_mode="chromium", headless=True,text_mode=True,light_mode=True,verbose=False)
 
     async with AsyncWebCrawler(config=browser) as crawler:
         #print("hi")
@@ -187,10 +192,9 @@ def clean_url(url):
         return None
 
     if domain in {"google.com","www.google.com","google.co.in","www.google.co.in"}:
-        if path in {"/search", "/webhp"}:
+        if path in {"/search", "/webhp","/goto", "/url"}:
             return None
 
-        print(path)
         if path.startswith("/intl/"):
             return None
 
@@ -215,15 +219,12 @@ async def allow(url):
         robots_url = f"{parsed_url.scheme}://{parsed_url.netloc}/robots.txt"
         rp = robotparser.RobotFileParser(robots_url)
         
-        # Helper function to fetch robots.txt with a strict socket timeout
         def fetch_robots_txt():
             req = urllib.request.Request(robots_url, headers={'User-Agent': '*'})
-            # The timeout=5.0 here ensures the thread itself will abort if the site hangs
             with urllib.request.urlopen(req, timeout=5.0) as response:
                 return response.read().decode('utf-8', errors='ignore').splitlines()
 
         try:
-            # Execute the timeout-enforced fetch in a background thread
             lines = await asyncio.to_thread(fetch_robots_txt)
             rp.parse(lines)
         except Exception as e:
@@ -233,7 +234,7 @@ async def allow(url):
         if rp.can_fetch("*", url):
             return url
         else:
-            print(f"Blocked by robots.txt: {url}")
+            logger.debug(f"Blocked by robots.txt: {url}")
             return None
 
     except Exception as e:
@@ -246,11 +247,16 @@ async def content_extractor(page,query):
     """It will extract the content from the html page"""
 
     logger.info("Successfully called content_extractor")
+    #await page.screenshot(path="debug_google_search.png")
+    try:
+        await page.wait_for_selector("#search", timeout=10000)
+    except Exception as e:
+        logger.warning("Search results did not load in time or a captcha/consent wall appeared.")
 
     text = await page.locator("body").inner_text()
   
     clean = []
-    links = await page.locator("a").evaluate_all("elements => elements.map(el => el.href)")
+    links = await page.locator("#search a").evaluate_all("elements => elements.map(el => el.href)")
 
     
     for link in links:
@@ -258,7 +264,7 @@ async def content_extractor(page,query):
         if a is None:
             continue
         clean.append(a)
-    print(len(clean))
+    logger.debug(f"total number of link before robot.txt- {len(clean)}")
     allows= []
     for i in clean:
         b = await allow(i)
@@ -267,19 +273,22 @@ async def content_extractor(page,query):
         allows.append(b)
 
     unique_links = list(set(allows))
+    logger.debug(f"total number of link after robot.txt - {len(unique_links)}")
 
     logger.debug(f"unique links - {unique_links}")
 
     # for i,link in enumerate(unique_links):
     #     print(f"{i}-> {link}")
+    
 
+    try:
+        data = await web_crawl(url=unique_links,query=query)
 
+        logger.info("Got results from web_crawler")
 
-    data = await web_crawl(url=unique_links,query=query)
-
-    logger.info("Got results from web_crawler")
-
-    vector_store(data)
+        vector_store(data)
+    except:
+        return{"success": False, "error": "unable to scrap the internet","vector_data":["no data found"]}
 
     retrieve_outcome = retrieve(query=query)
 
