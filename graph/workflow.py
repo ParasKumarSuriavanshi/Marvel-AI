@@ -11,6 +11,8 @@ from vectorStore.semantic import handle_semantic
 from memory.episodic import handle_episodic_memory
 from vectorStore.episodic_vt import handle_vector
 from graph.route import main_router, empty_node, direct_command_router, command_router,reset_loop_state_node, llm_needed_or_not, simple_respose
+from agent.speech_maker import speech_maker
+from agent.tts_maker import tts_maker
 
 from langgraph.graph import END, START, StateGraph
 
@@ -47,7 +49,7 @@ def build():
     builder.add_node("tool_node",tool_node)
     builder.add_edge("tool_node","Marvel_ai")
     
-    builder.add_conditional_edges("Marvel_ai",tool_contional_route,{"tool_node":"tool_node","no_tool":"direct_command_overwrite"})
+    builder.add_conditional_edges("Marvel_ai",tool_contional_route,{"tool_node":"tool_node","no_tool":"speech_maker"})#direct
     
 
 
@@ -60,6 +62,8 @@ def build():
     builder.add_node("simple_response",simple_respose)
     #builder.add_node("user", user_id_extractor)
     #builder.add_node("main_router", main_router)
+    builder.add_node("speech_maker",speech_maker)
+    builder.add_node("tts_maker",tts_maker)
 
 
     #------------Memory---------------------
@@ -102,9 +106,10 @@ def build():
     #--------------Direct Command------------
 
     #builder.add_edge("Marvel_ai" , "direct_command_overwrite")
-    builder.add_edge("simple_response", "direct_command_overwrite")
+    builder.add_edge("simple_response", "tts_maker")
+    builder.add_edge("speech_maker","tts_maker")
+    builder.add_edge("tts_maker", "direct_command_overwrite")
     builder.add_edge("direct_command_overwrite", END)
-
 
     builder.set_entry_point("user_id")
 

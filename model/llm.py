@@ -1,6 +1,4 @@
 from langchain_ollama import ChatOllama
-from langchain_groq import ChatGroq
-from groq import Groq
 import os
 from langchain_mistralai import ChatMistralAI
 from dotenv import load_dotenv

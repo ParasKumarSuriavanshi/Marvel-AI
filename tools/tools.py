@@ -1,6 +1,6 @@
 import asyncio
-
 from langchain.tools import tool
+from langgraph.types import interrupt
 import time
 import logging
 import subprocess
@@ -207,6 +207,28 @@ def web_searching(query):
     return{"tool":"web_searching","tool_used":True,"execution_success":a["success"],"error":a["error"],"web_data":a["vector_data"]}
 
 
+
+
+
+
+@tool
+def human_interruption(question:str):
+    """Call this tool whenever you need to confirm an action with the user or ask them a clarifying question.
+    ALWAYS use this tool if you have any doubt about the action you want to take.
+    ALWAYS use this tool if you have any doubt about the user query and make sure to ask in that case.
+    Do NOT use this tool for web searches, general knowledge, coding, or math.
+    - Also keep the question concise and to the point, as the user will see it in a pop-up window.
+    - ALWAYS ask even if u have the slightest doubt about the user query or action to be taken."""
+   
+
+    logger.info("Successfully called human_interruption.")
+
+
+    user_response = interrupt(question)
+
+    return{"tool":"human_interruption","tool_used":True,"execution_success":True,"error":"","user_response_to_question":user_response}
+
+
 tools =[
     open_application,
     close_application,
@@ -217,6 +239,7 @@ tools =[
     set_brightness,
     increase_brightness,
     decrease_brightness,
-    web_searching
+    web_searching,
+    human_interruption
 ]
 

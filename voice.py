@@ -1,9 +1,9 @@
 import os
 import ctypes
-import openwakeword
+#import openwakeword
 import pyaudio
 from openwakeword.model import Model
-from pocketsphinx import LiveSpeech
+#from pocketsphinx import LiveSpeech
 import numpy as np
 
 # 1. Define the ALSA error handler C-function type
@@ -20,7 +20,7 @@ try:
 except OSError:
     pass
 
-import speech_recognition
+#import speech_recognition
 
 def speech1():
     r =  speech_recognition.Recognizer()

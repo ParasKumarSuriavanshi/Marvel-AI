@@ -1,9 +1,12 @@
-
-from langchain_core.messages import HumanMessage
+from agent.tts_maker import tts_stop
+from langchain_core.messages import AIMessage, HumanMessage
+from langgraph.types import Command
+import requests
 from voice import speak, wake
 from graph.workflow import build
 from rich import print
 import logging
+
 
 
 #==========Logger==============
@@ -85,15 +88,21 @@ while True:
     # text = speak()
 
 
+
+
+
+
+
     print(("====================================="))
     #print(text)
     user_input = input("You: ")#text.lower()
+    tts_stop()
     print(("====================================="))    
 
 
-    if user_input == "bye" or user_input == "thats it" or user_input == "that's it" or user_input == "okay":
-        require_wake = True
-        continue
+    # if user_input == "bye" or user_input == "thats it" or user_input == "that's it" or user_input == "okay":
+    #     require_wake = True
+    #     continue
     if not user_input or user_input.isspace():
         logger.debug("No speech detected or understood. Restarting loop.")
         require_wake=True
@@ -108,6 +117,7 @@ while True:
         "thread_id": f"{user_id(user_input.lower())}"
         }
     }
+    user_query = input("You: ") 
     
     result = a.invoke(
         {
@@ -115,6 +125,35 @@ while True:
         },
         config=config
     )
+
+
+
+    state = a.get_state(config)
+    while state.next:
+
+        if state.tasks[0] and state.tasks[0].interrupts:
+            question_from_ai = state.tasks[0].interrupts[0].value
+            print(f"AI asks: {question_from_ai}")
+            
+
+            try:
+                requests.post("http://127.0.0.1:8000/tts", json={"text": question_from_ai}, timeout=10)
+            except requests.exceptions.RequestException as e:
+                logger.error(f"Error occurred while sending text to TTS service: {e}")
+                pass
+
+            user_input = input("Your answer: ")
+            tts_stop()
+
+
+            
+            result = a.invoke(
+                Command(resume=user_input),
+                config=config
+            )
+            state = a.get_state(config)
+        else:
+            break
     print(result.get("messages")[-1].content)
 
 

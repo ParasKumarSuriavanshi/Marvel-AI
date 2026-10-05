@@ -78,3 +78,5 @@ async def web_search(query):
 
 
     return outcome
+
+# asyncio.run(web_search("play metalist"))

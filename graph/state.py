@@ -138,6 +138,7 @@ class tool_info(TypedDict):
 
 class MarvelState(TypedDict):
     message_range:int
+    speech_messages:str
     user_id: str
     messages: Annotated[list[AnyMessage], add_messages]
     final_response: Optional[str]

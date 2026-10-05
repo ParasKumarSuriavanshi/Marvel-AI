@@ -162,7 +162,7 @@ def simple_respose(state):
     if error:
         message="Unable to execute the command"
     manual_ai_result = AIMessage(content=message)
-    return {"messages": [manual_ai_result]}
+    return {"speech_messages":message,"messages": [manual_ai_result]}
 
 
 
