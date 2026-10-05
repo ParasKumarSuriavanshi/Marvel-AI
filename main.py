@@ -5,6 +5,7 @@ import requests
 from voice import speak, wake
 from graph.workflow import build
 from rich import print
+from model.llm import llm
 import logging
 
 
@@ -80,6 +81,51 @@ def user_id(query):
 
 setup_global_logger()
 logger = logging.getLogger(__name__)
+
+
+
+
+
+
+
+def greeting_agent(state):
+    """Greet the user and set up the initial state"""
+    logger.info("Successfully called greeting_agent")
+
+    prompt = f""""You are Marvel-AI (personal assistant) with voice response capability. You've just woken up.
+    Greet the user warmly, and showing ready to help the user in a single sentence and ask what you should focus on today with small suggestion from conversation history.
+    Keep it small and quick. Don't use emoji.
+    CONVERSATION HISTORY:
+    {state.values.get('messages')}
+
+    """
+    result = llm.invoke(prompt)
+
+    text = result.content
+    text = text.replace("*"," ")
+    text = text.replace("e.g.","like")
+
+    try:
+        requests.post("http://127.0.0.1:8000/tts", json={"text": text}, timeout=10)
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error occurred while sending text to TTS service: {e}")
+        pass
+
+    print(result.content)
+
+    return result.content
+
+
+config0 = {
+    "configurable": {
+        "thread_id": "paras"
+        }
+    }
+
+greeting = greeting_agent(a.get_state(config0))
+state_messages =  [AIMessage(content=greeting)]
+
+
 require_wake=True
 while True:
     # if require_wake:
@@ -87,10 +133,7 @@ while True:
     #     require_wake = False
     # text = speak()
 
-
-
-
-
+    
 
 
     print(("====================================="))
@@ -117,12 +160,22 @@ while True:
         "thread_id": f"{user_id(user_input.lower())}"
         }
     }
-    result = a.invoke(
-        {
-            "messages": [HumanMessage(content=user_input)]
-        },
-        config=config
-    )
+
+    if user_id(user_input.lower()) == "paras":
+        state_messages.append(HumanMessage(content=user_input))
+        result = a.invoke(
+                {
+                    "messages": state_messages
+                },
+                config=config
+            )
+    else:
+        result = a.invoke(
+            {
+                "messages": [HumanMessage(content=user_input)]
+            },
+            config=config
+        )
 
 
 

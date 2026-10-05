@@ -1,5 +1,4 @@
-from graph.state import MarvelState
-from memory.semantic_json import searchjson
+
 from model.llm import llm
 from pydantic import BaseModel
 import logging
@@ -14,7 +13,7 @@ class struct(BaseModel):
 
 
     
-def user_id_extractor(state:MarvelState):
+def user_id_extractor(state):
     """This function decide the user ID means which user is using the assistant and store it in the state."""
 
 
