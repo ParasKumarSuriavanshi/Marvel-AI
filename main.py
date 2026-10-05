@@ -117,8 +117,6 @@ while True:
         "thread_id": f"{user_id(user_input.lower())}"
         }
     }
-    user_query = input("You: ") 
-    
     result = a.invoke(
         {
             "messages": [HumanMessage(content=user_input)]
