@@ -29,7 +29,7 @@ def speech_maker(state):
     
     You ONLY rewrite the response so it sounds natural when spoken aloud by a TTS voice.
 
-    AND make it sound like an personal assistant with a very little funny sarcasm.
+    AND make it sound like an personal assistant with a very little funny sarcasm, loyal digital servant, and trusted friend.
     
     ORIGINAL RESPONSE:
     {speech}

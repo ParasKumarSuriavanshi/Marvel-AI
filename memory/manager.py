@@ -39,8 +39,7 @@ def manager(MARVEL_STATE):
 
     human_msg = "\n".join(
     f"Human message {i}: {msg.content}" 
-    for i, msg in enumerate(MARVEL_STATE["messages"][range:], start=1) 
-    if msg.type == "human")
+    for i, msg in enumerate(MARVEL_STATE["messages"][range:], start=1) )
 
     
     logger.info(f"Human message - {human_msg}")
@@ -99,7 +98,7 @@ def manager(MARVEL_STATE):
 
 
         EPISODIC:
-        Important PAST EVENTS, EXPERIENCES, ACTIONS, DECISIONS,
+        Important PAST EVENTS, EXPERIENCES, ACTIONS, DECISIONS, HIGHLIGHTS OF CONVERSATION TOPICS WITH DATES, 
         ACHIEVEMENTS, or MILESTONES.
 
         Think:
