@@ -2,10 +2,13 @@ from agent.tts_maker import tts_stop
 from langchain_core.messages import AIMessage, HumanMessage
 from langgraph.types import Command
 import requests
-from voice import speak, wake
+import asyncio
+from audio_to_text.wakeworddet import wake
+from audio_to_text.voice import recoder
 from graph.workflow import build
 from rich import print
 from model.llm import llm
+import re
 import logging
 
 
@@ -83,12 +86,15 @@ setup_global_logger()
 logger = logging.getLogger(__name__)
 
 
+def has_words_basic(text: str) -> bool:
+    logger.debug(f"for checking understanbale sentence - {text}")
+    return bool(re.search(r"[a-zA-Z]{2,}", text))
 
 
 
 
 
-def greeting_agent(state):
+async def greeting_agent(state):
     """Greet the user and set up the initial state"""
     logger.info("Successfully called greeting_agent")
 
@@ -112,7 +118,8 @@ def greeting_agent(state):
         pass
 
     print(result.content)
-
+    global require_wake
+    require_wake = False
     return result.content
 
 
@@ -122,36 +129,50 @@ config0 = {
         }
     }
 
-greeting = greeting_agent(a.get_state(config0))
+require_wake=True
+check = False
+end_conversation = ["bye","bye.","thats it","thats it.","that's it","that's it.","okay","okay."]
+
+greeting = asyncio.run(greeting_agent(a.get_state(config0)))
 state_messages =  [AIMessage(content=greeting)]
 
 
-require_wake=True
 while True:
-    # if require_wake:
-    #     wake()
-    #     require_wake = False
-    # text = speak()
+    if require_wake:
+        asyncio.run(wake())
+        require_wake = False
 
-    
+    user_input = recoder()
 
-
-    print(("====================================="))
-    #print(text)
-    user_input = input("You: ")#text.lower()
-    tts_stop()
-    print(("====================================="))    
-
-
-    # if user_input == "bye" or user_input == "thats it" or user_input == "that's it" or user_input == "okay":
-    #     require_wake = True
-    #     continue
     if not user_input or user_input.isspace():
         logger.debug("No speech detected or understood. Restarting loop.")
         require_wake=True
         continue
 
-    if user_input.lower() in ["exit", "quit"]:
+    for i in end_conversation:
+        if user_input.lower().strip() == i:
+            require_wake = True
+            check = True
+    if check:
+        continue
+    # if user_input == "bye" or user_input == "thats it" or user_input == "thats it." or user_input == "that's it" or user_input == "okay":
+    #     require_wake = True
+    #     continue
+
+
+    if not has_words_basic(user_input):
+        print("Not understandable sentence")
+        continue
+    tts_stop()   
+
+
+    print(("====================================="))
+    print(user_input,";")
+    print(("====================================="))
+
+    
+
+    if user_input.lower().strip() in ["exit.","exit", "quit","quit.","exit. ","exit ", "quit ","quit. "]:
         break
 
     
@@ -192,8 +213,12 @@ while True:
             except requests.exceptions.RequestException as e:
                 logger.error(f"Error occurred while sending text to TTS service: {e}")
                 pass
-
-            user_input = input("Your answer: ")
+            content = None
+            while content is None:
+                content = recoder()
+            
+            user_input = content
+            print(f"Your answer: {user_input}")
             tts_stop()
 
 

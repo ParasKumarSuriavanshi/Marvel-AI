@@ -37,9 +37,11 @@ def manager(MARVEL_STATE):
     range = MARVEL_STATE.get("message_range", 0)
     logger.info(F"meassage starting range value is - {range}")
 
-    human_msg = "\n".join(
-    f"Human message {i}: {msg.content}" 
-    for i, msg in enumerate(MARVEL_STATE["messages"][range:], start=1) )
+    # human_msg = "\n".join(
+    # f" {i}: {msg.content}" 
+    # for i, msg in enumerate(MARVEL_STATE["messages"][range:], start=1) )
+
+    human_msg = MARVEL_STATE["messages"][range:]
 
     
     logger.info(f"Human message - {human_msg}")

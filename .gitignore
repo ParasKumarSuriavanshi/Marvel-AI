@@ -84,3 +84,7 @@ htmlcov/
 # =========================
 
 .ipynb_checkpoints/
+
+try.py
+output.wav
+my_wakeword.onnx
