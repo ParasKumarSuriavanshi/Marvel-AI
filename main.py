@@ -118,6 +118,8 @@ async def greeting_agent(state):
         pass
 
     print(result.content)
+    global require_wake
+    require_wake = False
     return result.content
 
 
@@ -127,6 +129,8 @@ config0 = {
         }
     }
 
+require_wake=True
+check = False
 end_conversation = ["bye","bye.","thats it","thats it.","that's it","that's it.","okay","okay."]
 
 greeting = asyncio.run(greeting_agent(a.get_state(config0)))
@@ -134,12 +138,37 @@ state_messages =  [AIMessage(content=greeting)]
 
 
 while True:
+    if require_wake:
+        asyncio.run(wake())
+        require_wake = False
 
+    user_input = recoder()
+
+    if not user_input or user_input.isspace():
+        logger.debug("No speech detected or understood. Restarting loop.")
+        require_wake=True
+        continue
+
+    for i in end_conversation:
+        if user_input.lower().strip() == i:
+            require_wake = True
+            check = True
+    if check:
+        continue
+    # if user_input == "bye" or user_input == "thats it" or user_input == "thats it." or user_input == "that's it" or user_input == "okay":
+    #     require_wake = True
+    #     continue
+
+
+    if not has_words_basic(user_input):
+        print("Not understandable sentence")
+        continue
+    tts_stop()   
 
 
     print(("====================================="))
-    user_input = input("You: ")
-    tts_stop()
+    #user_input = input("You: ")
+    print(user_input,";")
     print(("====================================="))
 
     
@@ -185,9 +214,12 @@ while True:
             except requests.exceptions.RequestException as e:
                 logger.error(f"Error occurred while sending text to TTS service: {e}")
                 pass
+            content = None
+            while content is None:
+                content = recoder()
             
-            user_input = input("Your Answer: ")
-        
+            user_input = content
+            print(f"Your answer: {user_input}")
             tts_stop()
 
 
