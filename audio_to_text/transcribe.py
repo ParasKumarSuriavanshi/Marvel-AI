@@ -30,4 +30,4 @@ def transcribe1():
 
 
 if __name__ == "__main__":
-    transcribe1()
+    print(transcribe1())

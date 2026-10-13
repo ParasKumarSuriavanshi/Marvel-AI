@@ -110,9 +110,11 @@ def handle_json(state):
     memory_data = state.get("memory_nodes", {})
 
     for operation in memory_data.get("memories", []):
+
         if operation.get("memory_type").lower() != "semantic":
             logger.info("operation not semantic type")
             continue
+       
         
         # Now you can access the keys for each individual operation
         action = operation.get("action")

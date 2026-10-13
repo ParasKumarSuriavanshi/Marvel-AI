@@ -12,6 +12,7 @@ except OSError:
     pass 
 import asyncio
 from livekit.wakeword import WakeWordListener, WakeWordModel
+from audio_to_text.voice import recoder
 import logging
 #==========Logger==============
 
@@ -38,6 +39,7 @@ async def wake():
             print("wakeword detected")
             logger.debug(f"deteced the {detection.name} {detection.confidence}")
             #print(f"deteced the {detection.name} {detection.confidence}")
+            #print(recoder())
             break
 
-#asyncio.run(wake())
+# asyncio.run(wake())

@@ -225,11 +225,9 @@ def handle_vector(state):
     memories_list = memory_data.get("memories", [])
 
     for operation in memories_list:
-
         if operation.get("memory_type").lower() != "episodic":
             logger.info("operation not episodic type")
             continue
-
 
         action = operation.get("action")
         data = operation.get("data", {})

@@ -225,13 +225,14 @@ def handle_semantic(state):
 
 
 
-    
-    for operation in memories_list:
+    print(memories_list)
 
-        if operation.get("memory_type").lower() != "semantic":
+    for operation in memories_list:
+     
+        if operation.get("memory_type").lower() != "semantic" :
             logger.info("operation not semantic type")
             continue
-            
+      
         action = operation.get("action")
         data = operation.get("data", {})
 

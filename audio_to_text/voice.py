@@ -36,7 +36,7 @@ RATE =  48000#16000#44100
 OUTPUT_FRAME = "output.wav"
 CHANNEL = 1
 SILENT_THRESHOLD = 500
-SILENT_DURATION = 5
+SILENT_DURATION = 4
 
 @app.get("/recoder")
 def recoder():
@@ -56,17 +56,11 @@ def recoder():
             data = stream.read(CHUNK)
             frame.append(data)
             audio_data = np.frombuffer(data, dtype=np.int16)
-            #print('_')
             rms = np.sqrt(np.mean(audio_data.astype(np.float64) ** 2))
-            #print("[]")
             if rms < SILENT_THRESHOLD:
-                #print("=")
                 if silent_time == None:
-                    #print("----")
                     silent_time = time.time()
-                    #print("-")
                 else:
-                    #print("'''''''")
                     elapsed_time = time.time() - silent_time
                     if elapsed_time > SILENT_DURATION:
                         break
