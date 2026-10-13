@@ -9,6 +9,7 @@ from graph.workflow import build
 from rich import print
 from model.llm import llm
 import re
+import os
 import logging
 
 
@@ -51,6 +52,7 @@ def user_id(query):
          "shift workspace to",
          "shift to a new user"
          ]
+    query = query.lower()
     for i in phareses:
         if i in query:
             try:
@@ -137,51 +139,107 @@ greeting = asyncio.run(greeting_agent(a.get_state(config0)))
 state_messages =  [AIMessage(content=greeting)]
 
 
-while True:
-    if require_wake:
-        asyncio.run(wake())
-        require_wake = False
 
-    user_input = recoder()
 
-    if not user_input or user_input.isspace():
+
+result=None
+
+
+import telebot
+token = os.getenv("tele")
+
+bot = telebot.TeleBot(token)
+
+
+def send_long_message(chat_id: int, text: str):
+    logger.info("send long message called")
+    if not text:
+        return
+    print(text)
+    if len(text) <= 4000:
+        
+        bot.send_message(chat_id, text)
+        return
+    logger.debug("Long message detected.")
+    for i in range(0, len(text), 4000):
+        chunk = text[i:i + 4000]
+        bot.send_message(chat_id, chunk)
+
+
+
+
+def handle_interrupt(config,chat_id,result,message):
+    logger.info("In handle_interrupt")
+    state =  a.get_state(config)
+    if state.next:
+        if state.tasks[0] and state.tasks[0].interrupts:
+            question_from_ai = state.tasks[0].interrupts[0].value
+            send_msg = bot.send_message(chat_id, f"AI asks: {question_from_ai}")
+            print("--------------------------------")
+            print(f"AI ask: {question_from_ai}")
+        try:
+            requests.post("http://127.0.0.1:8000/tts", json={"text": question_from_ai}, timeout=10)
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error occurred while sending text to TTS service: {e}")
+            pass
+            bot.register_next_step_handler(send_msg,interrupt_resume,config)
+            return
+    else:
+        content = result.get("messages")[-1].content
+        send_long_message(chat_id=chat_id,text=content,)
+
+
+def interrupt_resume(message,config:dict):
+    logger.info("in interrupt_resume")
+    
+    user_answer = message.text
+
+    print(f"Your answer: {user_answer}")
+    print("--------------------------------")
+    if not user_answer or user_answer.isspace():    
+        bot.reply_to(message,"No speech detected or understood. Restarting loop.")              #----
+        return
+
+
+    result = a.invoke(
+        Command(resume=user_answer),
+        config=config)
+    handle_interrupt(config,message.chat.id,result,message)
+
+
+
+@bot.message_handler(func=lambda message:True)
+def message_reciver(message):
+    global result
+    user_input = message.text
+    if not user_input or user_input.isspace():    
         logger.debug("No speech detected or understood. Restarting loop.")
-        require_wake=True
-        continue
-
+        return
+    check = False
     for i in end_conversation:
         if user_input.lower().strip() == i:
-            require_wake = True
             check = True
     if check:
-        continue
-    # if user_input == "bye" or user_input == "thats it" or user_input == "thats it." or user_input == "that's it" or user_input == "okay":
-    #     require_wake = True
-    #     continue
-
+        return
 
     if not has_words_basic(user_input):
-        print("Not understandable sentence")
-        continue
-    tts_stop()   
-
-
-    print(("====================================="))
-    #user_input = input("You: ")
-    print(user_input,";")
-    print(("====================================="))
+        logger.debug("Not understandable sentence")
+        return
 
     
+    print(("====================================="))
+    print(user_input)
+    print(("====================================="))
+
 
     if user_input.lower().strip() in ["exit.","exit", "quit","quit.","exit. ","exit ", "quit ","quit. "]:
-        break
+        return 
 
-    
     config = {
-    "configurable": {
-        "thread_id": f"{user_id(user_input.lower())}"
+        "configurable": {
+            "thread_id": f"{user_id(user_input.lower())}"
+            }
         }
-    }
 
     if user_id(user_input.lower()) == "paras":
         state_messages.append(HumanMessage(content=user_input))
@@ -198,42 +256,144 @@ while True:
             },
             config=config
         )
-
-
-
     state = a.get_state(config)
-    while state.next:
 
-        if state.tasks[0] and state.tasks[0].interrupts:
-            question_from_ai = state.tasks[0].interrupts[0].value
-            print(f"AI asks: {question_from_ai}")
+    chat_id=message.chat.id
+    
+    handle_interrupt(config,chat_id,result,user_input)
+    # while state.next:
+
+    #     if state.tasks[0] and state.tasks[0].interrupts:
+    #         question_from_ai = state.tasks[0].interrupts[0].value
+    #         send_msg = bot.reply_to(message, f"AI asks: {question_from_ai}")
             
 
-            try:
-                requests.post("http://127.0.0.1:8000/tts", json={"text": question_from_ai}, timeout=10)
-            except requests.exceptions.RequestException as e:
-                logger.error(f"Error occurred while sending text to TTS service: {e}")
-                pass
-            content = None
-            while content is None:
-                content = recoder()
+    #         # try:
+    #         #     requests.post("http://127.0.0.1:8000/tts", json={"text": question_from_ai}, timeout=10)
+    #         # except requests.exceptions.RequestException as e:
+    #         #     logger.error(f"Error occurred while sending text to TTS service: {e}")
+    #         #     pass
+    #         # content = None
+    #         # while content is None:
+    #         #     content = recoder()
             
-            user_input = content
-            print(f"Your answer: {user_input}")
-            tts_stop()
+    #         bot.register_next_step_handler(send_msg,inturrpt_call,config)
+
+    #         #user_input = content
+    #         # print(f"Your answer: {user_input}")
+    #         # #tts_stop()
 
 
             
-            result = a.invoke(
-                Command(resume=user_input),
-                config=config
-            )
-            state = a.get_state(config)
-        else:
-            break
-    print(result.get("messages")[-1].content)
+    #         # result = a.invoke(
+    #         #     Command(resume=user_input),
+    #         #     config=config
+    #         # )
+    #         state = a.get_state(config)
+    #     else:
+    #         break
+    # print(result.get("messages")[-1].content)
+    #bot.send_message(message.chat.id,result.get("messages")[-1].content)
 
 
+
+# while True:
+#     if require_wake:
+#         asyncio.run(wake())
+#         require_wake = False
+
+#     user_input = recoder()
+
+#     if not user_input or user_input.isspace():
+#         logger.debug("No speech detected or understood. Restarting loop.")
+#         require_wake=True
+#         continue
+
+#     for i in end_conversation:
+#         if user_input.lower().strip() == i:
+#             require_wake = True
+#             check = True
+#     if check:
+#         continue
+#     # if user_input == "bye" or user_input == "thats it" or user_input == "thats it." or user_input == "that's it" or user_input == "okay":
+#     #     require_wake = True
+#     #     continue
+
+
+#     if not has_words_basic(user_input):
+#         print("Not understandable sentence")
+#         continue
+#     tts_stop()   
+
+
+#     print(("====================================="))
+#     #user_input = input("You: ")
+#     print(user_input)
+#     print(("====================================="))
+
+    
+
+#     if user_input.lower().strip() in ["exit.","exit", "quit","quit.","exit. ","exit ", "quit ","quit. "]:
+#         break
+
+    
+#     config = {
+#     "configurable": {
+#         "thread_id": f"{user_id(user_input.lower())}"
+#         }
+#     }
+
+#     if user_id(user_input.lower()) == "paras":
+#         state_messages.append(HumanMessage(content=user_input))
+#         result = a.invoke(
+#                 {
+#                     "messages": state_messages
+#                 },
+#                 config=config
+#             )
+#     else:
+#         result = a.invoke(
+#             {
+#                 "messages": [HumanMessage(content=user_input)]
+#             },
+#             config=config
+#         )
+
+
+
+#     state = a.get_state(config)
+#     while state.next:
+
+#         if state.tasks[0] and state.tasks[0].interrupts:
+#             question_from_ai = state.tasks[0].interrupts[0].value
+#             print(f"AI asks: {question_from_ai}")
+            
+
+#             try:
+#                 requests.post("http://127.0.0.1:8000/tts", json={"text": question_from_ai}, timeout=10)
+#             except requests.exceptions.RequestException as e:
+#                 logger.error(f"Error occurred while sending text to TTS service: {e}")
+#                 pass
+#             content = None
+#             while content is None:
+#                 content = recoder()
+            
+#             user_input = content
+#             print(f"Your answer: {user_input}")
+#             tts_stop()
+
+
+            
+#             result = a.invoke(
+#                 Command(resume=user_input),
+#                 config=config
+#             )
+#             state = a.get_state(config)
+#         else:
+#             break
+#     print(result.get("messages")[-1].content)
+
+bot.infinity_polling(timeout=10, long_polling_timeout=30)
 
 for message in result.get("messages", []):
     # This will print something like "human: how are you" or "ai: I'm doing well!"
