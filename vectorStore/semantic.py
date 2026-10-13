@@ -225,7 +225,7 @@ def handle_semantic(state):
 
 
 
-    print(memories_list)
+    #print(memories_list)
 
     for operation in memories_list:
      
