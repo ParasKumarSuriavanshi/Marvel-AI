@@ -6,6 +6,7 @@ import re
 from pynput.keyboard import Key, Controller
 import time
 import logging
+from langgraph.types import interrupt
 from playwright.sync_api import sync_playwright
 #==========Logger==============
 
@@ -284,7 +285,15 @@ def decrease_brightness(level):
 
 
 
+def human_interrupt(question):
+    """It ask for human confirmation."""
 
+    logger.info("Successfully called human_interruption.")
+    
+    
+    user_response = interrupt(question)
+    
+    return user_response
 
     
 
@@ -294,17 +303,21 @@ def system_power_control(command):
     """This control the power system of the this computer like shutdoen, restart, suspend, sleep"""
     logger.info("Successfully called system_power_control")
 
+    user_response =human_interrupt(f"Are you sure you want to {command} you computer?")
+    if user_response not in ["yes","yeah","okay","u can","you can","ofc","of course"]:
+        return{"success":False,"error":"User denied to execute the command"}
+
     try:
         if command == "shutdown" or command == "shut":
-            subprocess.run(["shutdown","now"],stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            #subprocess.run(["shutdown","now"],stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             logger.debug("Command executed in shutdown")
             return{"success":True,"error":""}
         elif command == "restart":
-            subprocess.run(["reboot"],stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            #subprocess.run(["reboot"],stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             logger.debug("Command executed in restart")
             return{"success":True,"error":""}
         elif command == "sleep" or command == "suspend":
-            subprocess.run(["systemctl","suspend"],stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            #subprocess.run(["systemctl","suspend"],stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             logger.debug("Command executed in suspend")
             return{"success":True,"error":""}
         else:
