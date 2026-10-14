@@ -41,6 +41,11 @@ def direct_command_router(state):
         return "not_direct"
 
     ACTION_WORDS = {
+    "shut down",
+    "shutdown",
+    "restart",
+    "suspend",
+    "sleep",
     "open",
     "launch",
     "start",

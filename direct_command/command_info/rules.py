@@ -54,6 +54,25 @@ RULES = {
     
         ],
 
+    "SYSTEM_POWER_CONTROL": [
+        ["<command>","my","computer"],
+        ["<command>","down","my","computer"],
+        ["<command>","my","pc"],
+        ["<command>","down","my","pc"],
+        ["<command>","my","laptop"],
+        ["<command>","down","my","laptop"],
+        ["<command>","my","computer"],
+        ["<command>","my","pc"],
+        ["<command>","my","laptop"],
+        ["put","my","computer","to","<command>"],
+        ["put","my","pc","to","<command>"],
+        ["put","my","laptop","to","<command>"],
+        ["<command>","my","computer"],
+        ["<command>","my","pc"],
+        ["<command>","my","laptop"],
+
+    ]
+
     # "WEB_SEARCH": [
     #     ["search", "<query>"],
     #     ["search", "for", "<query>"],
