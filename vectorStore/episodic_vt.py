@@ -142,7 +142,7 @@ def delete_vector(memory_id: int):
     logger.info("delete func episodic vector successfully called")    
 
     if memory_id == None:
-        print("No memory id provided to the delete episodic memeory")
+        logger.warning("No memory id provided to the delete episodic memeory")
         return
 
     ids = np.array([memory_id], dtype=np.int64)
