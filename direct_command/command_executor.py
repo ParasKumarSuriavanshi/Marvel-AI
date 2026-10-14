@@ -290,6 +290,32 @@ def decrease_brightness(level):
 
 
 
+def system_power_control(command):
+    """This control the power system of the this computer like shutdoen, restart, suspend, sleep"""
+    logger.info("Successfully called system_power_control")
+
+    try:
+        if command == "shutdown" or command == "shut":
+            subprocess.run(["shutdown","now"],stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            logger.debug("Command executed in shutdown")
+            return{"success":True,"error":""}
+        elif command == "restart":
+            subprocess.run(["reboot"],stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            logger.debug("Command executed in restart")
+            return{"success":True,"error":""}
+        elif command == "sleep" or command == "suspend":
+            subprocess.run(["systemctl","suspend"],stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            logger.debug("Command executed in suspend")
+            return{"success":True,"error":""}
+        else:
+            logger.warning("Invalid command for system power control")
+            return{"success":False,"error":"Give a valid command"}
+    except:
+        logger.error("unable to run system power commands")
+        return{"success":False,"error":"Unable to execute the command"}
+
+
+
 
 
 
@@ -305,5 +331,6 @@ COMMAND_EXECUTOR = {
     "SET_BRIGHTNESS":set_brightness,
     "DECREASE_BRIGHTNESS":decrease_brightness,
     "INCREASE_BRIGHTNESS":increase_brightness,
-    "WEB_SEARCH":web_search
+    "WEB_SEARCH":web_search,
+    "SYSTEM_POWER_CONTROL":system_power_control,
 }

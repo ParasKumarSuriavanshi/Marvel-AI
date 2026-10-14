@@ -182,8 +182,8 @@ def handle_interrupt(config,chat_id,result,message):
         except requests.exceptions.RequestException as e:
             logger.error(f"Error occurred while sending text to TTS service: {e}")
             pass
-            bot.register_next_step_handler(send_msg,interrupt_resume,config)
-            return
+        bot.register_next_step_handler(send_msg,interrupt_resume,config)
+        return
     else:
         content = result.get("messages")[-1].content
         send_long_message(chat_id=chat_id,text=content,)
@@ -226,7 +226,7 @@ def message_reciver(message):
         logger.debug("Not understandable sentence")
         return
 
-    
+    tts_stop()
     print(("====================================="))
     print(user_input)
     print(("====================================="))

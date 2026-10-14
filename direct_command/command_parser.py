@@ -52,6 +52,11 @@ def command_parser(state):
     # input1=None
     
     ACTION_WORDS = [
+        "shutdown",
+        "shut down",
+        "restart",
+        "sleep",
+        "suspend",
         "open",
         "launch",
         "start",

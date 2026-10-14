@@ -229,6 +229,71 @@ def human_interruption(question:str):
     return{"tool":"human_interruption","tool_used":True,"execution_success":True,"error":"","user_response_to_question":user_response}
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+@tool
+def system_power_control(command):
+    """This control the power system of the this computer like shutdown, restart, suspend, sleep.
+    Make sure to pass a command sucj as "shutdown" , "restart", "sleep" , "suspend" according to the user need.
+    
+    IMPORTANT INSTRUCTION
+    ALWAYS ASK USER before executing for confirmation."""
+    logger.info("Successfully called system_power_control")
+    human_interruption(f"Are you sure you wat to {command} your pc?")
+    try:
+        if command == "shutdown" or command == "shut":
+            subprocess.run(["shutdown","now"],stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            logger.debug("Command executed in shutdown")
+            return{"success":True,"error":""}
+        elif command == "restart":
+            subprocess.run(["reboot"],stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            logger.debug("Command executed in restart")
+            return{"success":True,"error":""}
+        elif command == "sleep" or command == "suspend":
+            subprocess.run(["systemctl","suspend"],stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            logger.debug("Command executed in suspend")
+            return{"success":True,"error":""}
+        else:
+            logger.warning("Invalid command for system power control")
+            return{"success":False,"error":"Give a valid command"}
+    except:
+        logger.error("unable to run system power commands")
+        return{"success":False,"error":"Unable to execute the command"}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 tools =[
     open_application,
     close_application,
@@ -240,6 +305,7 @@ tools =[
     increase_brightness,
     decrease_brightness,
     web_searching,
-    human_interruption
+    human_interruption,
+    system_power_control
 ]
 
