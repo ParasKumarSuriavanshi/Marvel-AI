@@ -200,7 +200,7 @@ def delete(memory_id: int):
     logger.info("delete func semantic vector successfully called")    
 
     if memory_id == None:
-        print("No memory id provided to the delete semantic memeory")
+        logger.warning("No memory id provided to the delete semantic memeory")
         return
 
     ids = np.array([memory_id], dtype=np.int64)

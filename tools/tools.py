@@ -247,10 +247,11 @@ def system_power_control(command):
     """This control the power system of the this computer like shutdown, restart, suspend, sleep.
     Make sure to pass a command sucj as "shutdown" , "restart", "sleep" , "suspend" according to the user need.
     
-    IMPORTANT INSTRUCTION
-    ALWAYS ASK USER before executing for confirmation."""
+    """
     logger.info("Successfully called system_power_control")
-    human_interruption(f"Are you sure you wat to {command} your pc?")
+    a = human_interruption.invoke(f"Are you sure you wat to {command} your pc?")
+    if a not in ["yes","yeah","okay","u can","you can","ofc","of course"]:
+        return{"success":False,"error":"User denied to execute the command"}
     try:
         if command == "shutdown" or command == "shut":
             subprocess.run(["shutdown","now"],stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
